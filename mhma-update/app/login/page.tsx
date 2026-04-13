@@ -229,7 +229,7 @@ export default function LoginPage() {
                   type="submit"
                   className="w-full bg-[#b49c2e] hover:bg-[#8c7622] text-white font-semibold py-3 px-6 rounded transition-colors"
                 >
-                  Log In
+                  Login
                 </button>
               </form>
 

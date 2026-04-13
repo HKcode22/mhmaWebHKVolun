@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { fetchMHMAManagement, fetchActivitiesPosts, MHMASiteManagement, WordPressPost } from "@/lib/wordpress";
+import { fallbackPrayerTimes, getTodayDate, isFriday } from "@/lib/masjidi-widget";
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -23,19 +25,53 @@ export default function HomePage() {
   const [programsDropdown, setProgramsDropdown] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Activities carousel images from the original
-  const slides = [
+  // WordPress data state with fallback to null (hardcoded data will be used as fallback)
+  const [wpData, setWpData] = useState<MHMASiteManagement | null>(null);
+  const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
+
+  // Prayer times state (using hardcoded fallback - ready for Masjidi widget)
+  const [prayerTimes] = useState(fallbackPrayerTimes);
+  const [prayerDate] = useState(getTodayDate());
+
+  // Fetch WordPress data on mount
+  useEffect(() => {
+    const loadWordPressData = async () => {
+      try {
+        const [management, posts] = await Promise.all([
+          fetchMHMAManagement(),
+          fetchActivitiesPosts(5),
+        ]);
+        setWpData(management);
+        setWpPosts(posts);
+      } catch (error) {
+        // Silently fail - hardcoded fallback will be used
+        console.log("WordPress data not available, using fallback");
+      }
+    };
+
+    loadWordPressData();
+  }, []);
+
+  // Note: Masjidi widget integration ready
+  // For now using hardcoded times that update automatically when changed in Masjidi portal
+  // TODO: Add Masjidi iframe widget or API integration when API key is available
+
+  // Activities carousel images from the original (hardcoded fallback)
+  const hardcodedSlides = [
     { id: 1, src: "https://mhma.us/wp-content/uploads/2025/04/Family-Night-May-2025.jpg", alt: "Family Night May 2025" },
     { id: 2, src: "https://mhma.us/wp-content/uploads/2025/04/sexed-2025.jpg", alt: "Sex Education 2025" },
     { id: 3, src: "https://mhma.us/wp-content/uploads/2025/04/ff-6b2f6b48e772070440053eaebc648aef-ff-Those-Promised-Paradise.jpg", alt: "Those Promised Paradise" },
   ];
+
+  // Use hardcoded slides for carousel
+  const slides = hardcodedSlides;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, []);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
@@ -134,6 +170,10 @@ export default function HomePage() {
                       <Heart className="w-4 h-4 mr-2" />
                       ZAKAT
                     </a>
+                    <a href="/jummah" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
+                      <Landmark className="w-4 h-4 mr-2" />
+                      JUMMAH
+                    </a>
                   </div>
                 )}
               </div>
@@ -219,7 +259,7 @@ export default function HomePage() {
             Strengthening The Bond of brotherhood
           </p>
           <h1 className="text-white text-5xl md:text-7xl font-bold mb-8 uppercase tracking-wide">
-            MAKE A DIFFERENCE
+            {wpData?.homeHeroText || "MAKE A DIFFERENCE"}
           </h1>
           <div className="max-w-3xl mx-auto mb-10">
             <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">
@@ -250,56 +290,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Prayer Times Section */}
+      {/* Prayer Times Section - Live Masjidi Widget */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-gray-600 mb-4">Wednesday, April 1, 2026</p>
-          <h2 className="text-center text-green-600 text-2xl font-bold mb-12 uppercase">
-            Jumma at the Unity Center
-          </h2>
-          
-          {/* Jumma Times */}
-          <div className="flex flex-wrap justify-center items-center gap-8 mb-12">
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">Bayan</p>
-              <p className="text-green-600 text-3xl font-bold">1:45 PM</p>
+          {/* Date Header */}
+          <p className="text-center text-gray-600 mb-6">{prayerDate}</p>
+
+          {/* Jummah Information */}
+          <div className="mb-8 max-w-3xl mx-auto bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-lg p-8 border border-amber-200">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center mr-4">
+                <Landmark className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800">Jummah Prayer at Unity Center</h3>
             </div>
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">Iqamah</p>
-              <p className="text-red-500 text-3xl font-bold">2:10 PM</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <p className="text-sm text-gray-600 mb-1">Bayan Time</p>
+                <p className="text-xl font-bold text-amber-600">1:45 PM</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <p className="text-sm text-gray-600 mb-1">Jummah Prayer</p>
+                <p className="text-xl font-bold text-amber-600">2:15 PM</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <p className="text-sm text-gray-600 mb-1">Location</p>
+                <p className="text-lg font-semibold text-gray-700">Unity Center</p>
+              </div>
             </div>
           </div>
 
-          <hr className="border-gray-200 mb-12 max-w-2xl mx-auto" />
-
-          {/* Daily Prayer Times */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">fajr</p>
-              <p className="text-green-600 text-xl font-bold">6:10 AM</p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">dhur</p>
-              <p className="text-green-600 text-xl font-bold">1:30 PM</p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">asr</p>
-              <p className="text-green-600 text-xl font-bold">5:50 PM</p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">maghrib</p>
-              <p className="text-green-600 text-xl font-bold">7:37 PM</p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-700 uppercase text-sm font-medium mb-2">isha</p>
-              <p className="text-green-600 text-xl font-bold">9:00 PM</p>
-            </div>
+          {/* Live Prayer Times Widget - Masjidi App */}
+          <div className="w-full flex justify-center">
+            <iframe
+              src="http://ummahsoft.org/salahtime/masjid-embed/prayer_widet.php?masjid_id=53487"
+              width="450"
+              height="500"
+              frameBorder="0"
+              marginWidth={0}
+              marginHeight={0}
+              scrolling="no"
+              style={{ border: 'none' }}
+              title="MHMA Prayer Times - Masjidi App"
+              loading="lazy"
+            />
           </div>
+
+          {/* Fallback Notice */}
+          <p className="text-center text-xs text-gray-500 mt-4">
+            Prayer times provided by Masjidi.com - Updates automatically when changed in Masjidi portal
+          </p>
         </div>
       </section>
 
       {/* Activities Section with Carousel - WordPress Compatible */}
-      <section id="activities" className="py-20 bg-gray-100" aria-label="Activities and Events">
+      <section id="activities" className="py-20 bg-white" aria-label="Activities and Events">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <header className="text-center">
             <h2 className="text-4xl font-bold mb-4 uppercase">Activities and Events</h2>
@@ -311,15 +356,16 @@ export default function HomePage() {
 
           {/* Carousel - Accessible and WordPress Ready */}
           <div 
-            className="relative overflow-hidden rounded-lg shadow-xl max-w-4xl mx-auto aspect-video"
+            className="relative overflow-hidden rounded-lg shadow-xl max-w-6xl mx-auto"
             role="region"
             aria-roledescription="carousel"
             aria-label="Activities and Events Slider"
+            style={{ minHeight: '600px' }}
           >
             {slides.map((slide, index) => (
               <div
                 key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-500 ${
+                className={`absolute inset-0 transition-opacity duration-500 flex items-center justify-center ${
                   index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
                 role="group"
@@ -330,7 +376,7 @@ export default function HomePage() {
                 <img 
                   src={slide.src}
                   alt={slide.alt}
-                  className="w-full h-full object-contain bg-gray-900"
+                  className="max-w-full max-h-[600px] object-contain"
                   loading={index === 0 ? "eager" : "lazy"}
                 />
               </div>
@@ -339,17 +385,17 @@ export default function HomePage() {
             {/* Carousel Controls */}
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-amber-500 hover:bg-amber-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors z-20"
               aria-label="Previous slide"
             >
-              <ChevronLeft className="w-6 h-6" aria-hidden="true" />
+              <ChevronLeft className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-amber-500 hover:bg-amber-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors z-20"
               aria-label="Next slide"
             >
-              <ChevronRight className="w-6 h-6" aria-hidden="true" />
+              <ChevronRight className="w-5 h-5" aria-hidden="true" />
             </button>
 
             {/* Dots Navigation */}

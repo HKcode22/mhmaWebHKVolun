@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -259,11 +259,21 @@ export default function DonatePage() {
                 
                 {/* Stripe Buy Button */}
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-                  <stripe-buy-button
-                    buy-button-id="buy_btn_1O6UR8KkhNmRB0QYd4bijFKq"
-                    publishable-key="pk_live_51Nz3brKkhNmRB0QYiQmU7j48IR0VIVgI5fUW9boK2NGoz2ZzhCSn8n4EivbkAzovFpZja1l4mAyFshV5izioBIJK00h8ttma6x"
-                  ></stripe-buy-button>
+                  <div ref={(el) => {
+                    if (el && typeof window !== 'undefined') {
+                      // Clear and inject Stripe button
+                      el.innerHTML = '';
+                      const script = document.createElement('script');
+                      script.src = 'https://js.stripe.com/v3/buy-button.js';
+                      script.async = true;
+                      el.appendChild(script);
+                      
+                      const button = document.createElement('stripe-buy-button');
+                      button.setAttribute('buy-button-id', 'buy_btn_1O6UR8KkhNmRB0QYd4bijFKq');
+                      button.setAttribute('publishable-key', 'pk_live_51Nz3brKkhNmRB0QYiQmU7j48IR0VIVgI5fUW9boK2NGoz2ZzhCSn8n4EivbkAzovFpZja1l4mAyFshV5izioBIJK00h8ttma6x');
+                      el.appendChild(button);
+                    }
+                  }} />
                 </div>
 
                 <p className="text-gray-600 mt-6 text-sm">
