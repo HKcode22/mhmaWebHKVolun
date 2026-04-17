@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Menu,
-  X,
-  ChevronDown,
   User,
   Heart,
   Building2,
@@ -18,11 +15,9 @@ import {
 } from "lucide-react";
 import { fetchMHMAManagement, fetchActivitiesPosts, MHMASiteManagement, WordPressPost } from "@/lib/wordpress";
 import { fallbackPrayerTimes, getTodayDate, isFriday } from "@/lib/masjidi-widget";
+import Navigation from "@/components/Navigation";
 
 export default function HomePage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mhmaDropdown, setMhmaDropdown] = useState(false);
-  const [programsDropdown, setProgramsDropdown] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // WordPress data state with fallback to null (hardcoded data will be used as fallback)
@@ -78,171 +73,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* Top Navigation - White background */}
-      <nav className="bg-white border-b border-gray-100 z-50 relative">
-        <div className="max-w-7xl mx-auto pl-0 pr-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo - Completely Left */}
-            <div className="flex-shrink-0 -ml-2">
-              <a href="/" className="flex items-center">
-                <img 
-                  src="https://mhma.us/wp-content/uploads/2025/04/Logo-300x300-gold-on-white.webp" 
-                  alt="Mountain House Muslim Association Logo" 
-                  className="h-14 w-auto"
-                  width="56"
-                  height="56"
-                />
-              </a>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-8">
-              <a
-                href="/"
-                className="text-sm font-medium text-amber-500 transition-colors uppercase tracking-wide"
-              >
-                Home
-              </a>
-
-              {/* MHMA Dropdown */}
-              <div className="relative group">
-                <div
-                  className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide py-2 cursor-pointer"
-                  onMouseEnter={() => setMhmaDropdown(true)}
-                  onMouseLeave={() => setMhmaDropdown(false)}
-                >
-                  <Landmark className="w-4 h-4 mr-1" />
-                  <a href="/mhmapage" className="hover:text-amber-500">MHMA</a>
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </div>
-                {mhmaDropdown && (
-                  <div
-                    className="absolute left-0 top-full w-56 bg-white border border-gray-100 rounded shadow-xl py-2"
-                    onMouseEnter={() => setMhmaDropdown(true)}
-                    onMouseLeave={() => setMhmaDropdown(false)}
-                  >
-                    <a href="/board" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <Users className="w-4 h-4 mr-2" />
-                      BOARD
-                    </a>
-                    <a href="/committees" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <Users className="w-4 h-4 mr-2" />
-                      COMMITTEES
-                    </a>
-                    <a href="/bylaws" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      BYLAWS
-                    </a>
-                    <a href="/feedback" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <Users className="w-4 h-4 mr-2" />
-                      FEEDBACK
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Programs Dropdown */}
-              <div className="relative group">
-                <button
-                  className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide py-2"
-                  onMouseEnter={() => setProgramsDropdown(true)}
-                  onMouseLeave={() => setProgramsDropdown(false)}
-                >
-                  <BookOpen className="w-4 h-4 mr-1" />
-                  PROGRAMS
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </button>
-                {programsDropdown && (
-                  <div
-                    className="absolute left-0 top-full w-56 bg-white border border-gray-100 rounded shadow-xl py-2"
-                    onMouseEnter={() => setProgramsDropdown(true)}
-                    onMouseLeave={() => setProgramsDropdown(false)}
-                  >
-                    <a href="/programs" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      ALL PROGRAMS
-                    </a>
-                    <a href="/programs/maktab-program" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      MHMA MAKTAB
-                    </a>
-                    <a href="/zakat" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <Heart className="w-4 h-4 mr-2" />
-                      ZAKAT
-                    </a>
-                    <a href="/jummah" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <Landmark className="w-4 h-4 mr-2" />
-                      JUMMAH
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              <a
-                href="/donate"
-                className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide"
-              >
-                <Heart className="w-4 h-4 mr-1" />
-                DONATE
-              </a>
-
-              <a
-                href="/login"
-                className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide"
-              >
-                <User className="w-4 h-4 mr-1" />
-                Login
-              </a>
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 text-gray-700 hover:text-amber-500"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
-            <div className="px-4 py-3 space-y-2">
-              <a href="/" className="block px-3 py-2 text-base font-medium text-amber-500 bg-gray-50 rounded">
-                HOME
-              </a>
-              <a href="/board" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                BOARD
-              </a>
-              <a href="/committees" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                COMMITTEES
-              </a>
-              <a href="/bylaws" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                BYLAWS
-              </a>
-              <a href="/feedback" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                FEEDBACK
-              </a>
-              <a href="/programs" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                ALL PROGRAMS
-                <a href="/programs/maktab-program" className="block px-4 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">MHMA MAKTAB</a>
-              </a>
-              <a href="/zakat" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                ZAKAT
-              </a>
-              <a href="/donate" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                DONATE
-              </a>
-              <a href="/login" className="block px-3 py-2 text-base font-medium text-gray-800 hover:text-amber-500 hover:bg-gray-50 rounded">
-                Login
-              </a>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navigation currentPage="home" />
 
       {/* Hero Section - With Background Image and Dark Overlay */}
       <section 

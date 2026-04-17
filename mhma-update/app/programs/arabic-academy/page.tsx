@@ -1,109 +1,170 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ChevronDown,
-  Facebook,
-  Instagram,
-  Menu,
-  X,
-  Twitter,
-  Linkedin,
-  Youtube,
-} from "lucide-react";
+import { Edit, Facebook, Instagram, Twitter, Linkedin, Youtube } from "lucide-react";
+import { fetchGraphQL } from "@/lib/wordpress";
+import Navigation from "@/components/Navigation";
+
+interface ProgramData {
+  title: string;
+  description: string;
+  stat1Label: string;
+  stat1Value: string;
+  stat2Label: string;
+  stat2Value: string;
+  stat3Label: string;
+  stat3Value: string;
+  stat4Label: string;
+  stat4Value: string;
+  additionalContent: string;
+}
 
 export default function ArabicAcademyPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
-  const [programsDropdownOpen, setProgramsDropdownOpen] = useState(false);
+  const [programData, setProgramData] = useState<ProgramData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [programId, setProgramId] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem("jwt_token");
+    const username = localStorage.getItem("username");
+    const userRole = localStorage.getItem("user_role");
+    console.log("Arabic Academy - Login state check:", { token: !!token, username, userRole, programId });
+    setIsLoggedIn(!!token);
+
+    // Debug: check if edit button should show
+    console.log("Arabic Academy - Should show edit button?", { isLoggedIn: !!token, programId });
+
+    const fetchProgramData = async () => {
+      const query = `
+        query GetProgramPage {
+          page(id: "arabic-academy", idType: SLUG) {
+            databaseId
+            title
+            content
+            acfProgramContent {
+              program_title
+              program_description
+              program_image {
+                sourceUrl
+              }
+              stat1_label
+              stat1_value
+              stat2_label
+              stat2_value
+              stat3_label
+              stat3_value
+              stat4_label
+              stat4_value
+              additional_content
+            }
+          }
+        }
+      `;
+
+      const data = await fetchGraphQL(query);
+      console.log("GraphQL data:", data);
+      if (data?.page) {
+        setProgramId(data.page.databaseId);
+        const programData = {
+          title: data.page.acfProgramContent?.program_title || data.page.title || "LEARN ARABIC LANGUAGE",
+          description: data.page.acfProgramContent?.program_description || "",
+          stat1Label: data.page.acfProgramContent?.stat1_label || "Students",
+          stat1Value: data.page.acfProgramContent?.stat1_value || "25",
+          stat2Label: data.page.acfProgramContent?.stat2_label || "Days/Week",
+          stat2Value: data.page.acfProgramContent?.stat2_value || "5",
+          stat3Label: data.page.acfProgramContent?.stat3_label || "",
+          stat3Value: data.page.acfProgramContent?.stat3_value || "",
+          stat4Label: data.page.acfProgramContent?.stat4_label || "",
+          stat4Value: data.page.acfProgramContent?.stat4_value || "",
+          additionalContent: data.page.acfProgramContent?.additional_content || "",
+        };
+        console.log("Program data set:", programData);
+        setProgramData(programData);
+      } else {
+        console.log("No page data found, using fallbacks");
+        setProgramData({
+          title: "LEARN ARABIC LANGUAGE",
+          description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
+          stat1Label: "Students",
+          stat1Value: "25",
+          stat2Label: "Days/Week",
+          stat2Value: "5",
+          stat3Label: "",
+          stat3Value: "",
+          stat4Label: "",
+          stat4Value: "",
+          additionalContent: "",
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchProgramData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
-      <nav className="bg-white shadow-sm fixed w-full z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex-shrink-0">
-              <Link href="/" className="block">
-                <Image src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp" alt="MHMA Logo" width={180} height={40} className="h-10 w-auto" />
-              </Link>
-            </div>
-            <div className="hidden lg:flex items-center space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-[#c9a227] transition-colors font-medium">HOME</Link>
-              <div className="relative" onMouseEnter={() => setAboutDropdownOpen(true)} onMouseLeave={() => setAboutDropdownOpen(false)}>
-                <Link href="/mhmapage" className="flex items-center text-gray-700 hover:text-[#c9a227] transition-colors font-medium">
-                  MHMA<ChevronDown className="ml-1 h-4 w-4" />
-                </Link>
-                {aboutDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
-                    <Link href="/board" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">BOARD</Link>
-                    <Link href="/committees" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">COMMITTEES</Link>
-                    <Link href="/bylaws" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">BYLAWS</Link>
-                    <Link href="/feedback" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">FEEDBACK</Link>
-                  </div>
-                )}
-              </div>
-              <div className="relative" onMouseEnter={() => setProgramsDropdownOpen(true)} onMouseLeave={() => setProgramsDropdownOpen(false)}>
-                <Link href="/programs" className="flex items-center text-[#c9a227] font-medium">
-                  PROGRAMS<ChevronDown className="ml-1 h-4 w-4" />
-                </Link>
-                {programsDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-56 bg-white shadow-lg rounded-md py-2 z-50">
-                    <Link href="/programs" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">ALL PROGRAMS</Link>
-                    <Link href="/programs/maktab-program" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">MHMA MAKTAB</Link>
-                    <Link href="/zakat" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">ZAKAT</Link>
-                  </div>
-                )}
-              </div>
-              <Link href="/donate" target="_blank" className="text-gray-700 hover:text-[#c9a227] transition-colors font-medium">DONATE</Link>
-              <Link href="/login" className="text-gray-700 hover:text-[#c9a227] transition-colors font-medium">LOGIN</Link>
-            </div>
-            <div className="lg:hidden">
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-700 hover:text-[#c9a227] p-2">
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
-          {mobileMenuOpen && (
-            <div className="lg:hidden bg-white border-t">
-              <div className="px-2 pt-2 pb-3 space-y-1">
-                <Link href="/" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">HOME</Link>
-                <Link href="/mhmapage" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">MHMA</Link>
-                <Link href="/board" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">BOARD</Link>
-                <Link href="/committees" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">COMMITTEES</Link>
-                <Link href="/programs" className="block px-3 py-2 text-[#c9a227] font-medium">PROGRAMS</Link>
-                <Link href="/donate" target="_blank" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">DONATE</Link>
-                <Link href="/login" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">LOGIN</Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+      <Navigation currentPage="programs" />
 
       <main className="pt-20">
-        <section className="py-0">
-          <div className="flex flex-col lg:flex-row">
-            <div className="w-full lg:w-2/3 py-16 px-6 md:px-12 lg:px-16">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 uppercase mb-6">LEARN ARABIC LANGUAGE</h1>
-              <div className="w-48 h-1 bg-[#c9a227] mb-8"></div>
-              <div className="prose max-w-none">
-                <p className="text-lg text-gray-700 mb-4">
-                  A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.
-                </p>
-              </div>
-            </div>
-            <div className="w-full lg:w-1/3 bg-gray-100 py-16 px-6 md:px-8">
-              <div className="bg-white/50 p-8 mb-8">
-                <div className="text-center mb-8">
-                  <div className="text-5xl font-bold text-gray-800 mb-2">25</div>
-                  <div className="text-gray-600 uppercase">Students</div>
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-gray-500">Loading...</div>
+          </div>
+        ) : (
+          <section className="py-0">
+            <div className="flex flex-col lg:flex-row">
+              <div className="w-full lg:w-2/3 py-16 px-6 md:px-12 lg:px-16">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800 uppercase mb-6">
+                  {programData?.title || "LEARN ARABIC LANGUAGE"}
+                </h1>
+                <div className="w-48 h-1 bg-[#c9a227] mb-8"></div>
+                <div className="prose max-w-none">
+                  <p className="text-lg text-gray-700 mb-4">
+                    {programData?.description || "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language."}
+                  </p>
+                  {programData?.additionalContent && (
+                    <div className="mt-6" dangerouslySetInnerHTML={{ __html: programData.additionalContent }} />
+                  )}
                 </div>
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-gray-800 mb-2">5</div>
-                  <div className="text-gray-600 uppercase">Days/Week</div>
-                </div>
               </div>
+              <div className="w-full lg:w-1/3 bg-gray-100 py-16 px-6 md:px-8">
+                {isLoggedIn && (
+                  <Link
+                    href={`/dashboard/programs/edit?id=${programId || "arabic-academy"}`}
+                    className="flex items-center justify-center bg-[#c9a227] hover:bg-[#8c7622] text-white py-2 px-4 rounded mb-4 transition-colors"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Program
+                  </Link>
+                )}
+                <div className="bg-white/50 p-8 mb-8">
+                  {programData?.stat1Value && (
+                    <div className="text-center mb-8">
+                      <div className="text-5xl font-bold text-gray-800 mb-2">{programData.stat1Value}</div>
+                      <div className="text-gray-600 uppercase">{programData.stat1Label}</div>
+                    </div>
+                  )}
+                  {programData?.stat2Value && (
+                    <div className="text-center">
+                      <div className="text-5xl font-bold text-gray-800 mb-2">{programData.stat2Value}</div>
+                      <div className="text-gray-600 uppercase">{programData.stat2Label}</div>
+                    </div>
+                  )}
+                </div>
+                {isLoggedIn ? (
+                  <div className="block w-full bg-gray-300 text-gray-500 font-semibold py-3 px-6 rounded text-center mb-8 cursor-not-allowed">
+                    Already Registered
+                  </div>
+                ) : (
+                  <Link href="/register" className="block w-full bg-[#b49c2e] hover:bg-[#8c7622] text-white font-semibold py-3 px-6 rounded text-center transition-colors mb-8">
+                    Join Now
+                  </Link>
+                )}
               <div className="mb-8">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.0977704984784!2d-121.5405094!3d37.7786645!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80900c02b5b8f353%3A0xa8e69c4f6e63c44a!2sMountain%20House%20Unity%20Center!5e0!3m2!1sen!2sus!4v1699400000000!5m2!1sen!2sus"
@@ -123,6 +184,7 @@ export default function ArabicAcademyPage() {
             </div>
           </div>
         </section>
+        )}
         <section className="py-12 px-4 bg-gray-50">
           <div className="max-w-6xl mx-auto text-center">
             <Link href="/programs" className="inline-block bg-[#b49c2e] hover:bg-[#8c7622] text-white font-semibold py-3 px-8 rounded transition-colors">Back to Programs</Link>

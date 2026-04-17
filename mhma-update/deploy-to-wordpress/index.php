@@ -1,15 +1,13 @@
 <?php
 /**
- * WordPress React Frontend Bridge - FIXED VERSION
- * Serves appropriate React HTML files for each route
+ * WordPress React Frontend Bridge - SERVER MODE
+ * Proxies requests to Next.js server at localhost:3000
  */
 
 $request_uri = $_SERVER['REQUEST_URI'];
-$path = parse_url($request_uri, PHP_URL_PATH);
-$path = trim($path, '/');
 
 // Allow WordPress admin, API, and uploads to work normally
-if (strpos($request_uri, '/wp-admin') === 0 || 
+if (strpos($request_uri, '/wp-admin') === 0 ||
     strpos($request_uri, '/wp-login.php') === 0 ||
     strpos($request_uri, '/wp-json') === 0 ||
     strpos($request_uri, '/graphql') === 0 ||
@@ -18,46 +16,42 @@ if (strpos($request_uri, '/wp-admin') === 0 ||
     exit;
 }
 
-// React app folder
-$react_app = dirname(__FILE__) . '/react-app';
+// Proxy to Next.js server
+$nextjs_url = 'http://localhost:3000' . $request_uri;
 
-// Map paths to HTML files
-$html_file = null;
+// Initialize cURL
+$ch = curl_init($nextjs_url);
 
-if ($path === '' || $path === '/') {
-    // Home page
-    $html_file = $react_app . '/index.html';
-} else {
-    // Try to find matching HTML file
-    $possible_files = [
-        $react_app . '/' . $path . '.html',
-        $react_app . '/' . $path . '/index.html',
-    ];
-    
-    foreach ($possible_files as $file) {
-        if (file_exists($file)) {
-            $html_file = $file;
-            break;
-        }
+// Forward all headers
+foreach (getallheaders() as $name => $value) {
+    // Skip certain headers
+    if (strtolower($name) !== 'host') {
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["$name: $value"]);
     }
 }
 
-// If no specific HTML file found, serve index.html (SPA fallback)
-if (!$html_file || !file_exists($html_file)) {
-    $html_file = $react_app . '/index.html';
+// Set cURL options
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
+
+// Forward POST data
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    curl_setopt($ch, CURLOPT_POSTFIELDS, file_get_contents('php://input'));
 }
 
-// Serve the HTML file
-if (file_exists($html_file)) {
-    // Read the HTML content
-    $content = file_get_contents($html_file);
-    
-    // Fix asset paths - ensure they point to react-app folder
-    $content = str_replace('href="./', 'href="/react-app/', $content);
-    $content = str_replace('src="./', 'src="/react-app/', $content);
-    
-    echo $content;
-} else {
-    echo "React app not found at: $html_file";
+// Execute the request
+$response = curl_exec($ch);
+$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+curl_close($ch);
+
+// Set response headers
+if ($content_type) {
+    header("Content-Type: $content_type");
 }
+http_response_code($http_code);
+
+// Output the response
+echo $response;
 ?>
