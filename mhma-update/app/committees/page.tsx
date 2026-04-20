@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ChevronDown, Users, BookOpen, Facebook, Instagram, Twitter, Youtube, Linkedin, Map, BookMarked, MessageSquare, DollarSign, User } from 'lucide-react';
+import React from 'react';
+import { Facebook, Instagram, Twitter, Youtube, Linkedin } from 'lucide-react';
+import Navigation from '@/components/Navigation';
 
 export default function CommitteesPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mhmaDropdown, setMhmaDropdown] = useState(false);
-  const [programsDropdown, setProgramsDropdown] = useState(false);
 
   const committees = [
     {
@@ -83,162 +81,9 @@ export default function CommitteesPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* Top Navigation */}
-      <nav className="bg-white border-b border-gray-100 z-50 relative">
-        <div className="max-w-7xl mx-auto pl-0 pr-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo */}
-            <div className="flex-shrink-0 -ml-2">
-              <a href="/" className="flex items-center">
-                <img 
-                  src="https://mhma.us/wp-content/uploads/2025/04/Logo-300x300-gold-on-white.webp" 
-                  alt="Mountain House Muslim Association Logo" 
-                  className="h-14 w-auto"
-                  width="56"
-                  height="56"
-                />
-              </a>
-            </div>
+      <Navigation currentPage="mhma" />
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-8">
-              <a href="/" className="text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide">
-                HOME
-              </a>
-
-              {/* MHMA Dropdown */}
-              <div className="relative group">
-                <div
-                  className="flex items-center text-sm font-medium text-amber-500 transition-colors uppercase tracking-wide py-2 cursor-pointer"
-                  onMouseEnter={() => setMhmaDropdown(true)}
-                  onMouseLeave={() => setMhmaDropdown(false)}
-                >
-                  <Map className="w-4 h-4 mr-1" />
-                  <a href="/mhmapage" className="hover:text-amber-500">MHMA</a>
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </div>
-                {mhmaDropdown && (
-                  <div
-                    className="absolute left-0 top-full w-56 bg-white border border-gray-100 rounded shadow-xl py-2"
-                    onMouseEnter={() => setMhmaDropdown(true)}
-                    onMouseLeave={() => setMhmaDropdown(false)}
-                  >
-                    <a href="/board" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <Users className="w-4 h-4 mr-2" />
-                      BOARD
-                    </a>
-                    <a href="/committees" className="flex items-center px-4 py-2 text-sm text-amber-500 bg-gray-50">
-                      <Users className="w-4 h-4 mr-2" />
-                      COMMITTEES
-                    </a>
-                    <a href="/bylaws" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <BookMarked className="w-4 h-4 mr-2" />
-                      BYLAWS
-                    </a>
-                    <a href="/feedback" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      FEEDBACK
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Programs Dropdown */}
-              <div className="relative group">
-                <div
-                  className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide py-2 cursor-pointer"
-                  onMouseEnter={() => setProgramsDropdown(true)}
-                  onMouseLeave={() => setProgramsDropdown(false)}
-                >
-                  <BookOpen className="w-4 h-4 mr-1" />
-                  <a href="/programs" className="hover:text-amber-500">PROGRAMS</a>
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </div>
-                {programsDropdown && (
-                  <div
-                    className="absolute left-0 top-full w-56 bg-white border border-gray-100 rounded shadow-xl py-2"
-                    onMouseEnter={() => setProgramsDropdown(true)}
-                    onMouseLeave={() => setProgramsDropdown(false)}
-                  >
-                    <a href="/programs" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      ALL PROGRAMS
-                    </a>
-                    <a href="/programs/maktab-program" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      MHMA MAKTAB
-                    </a>
-                    <a href="/zakat" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-amber-500">
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      ZAKAT
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              <a href="/donate" className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors uppercase tracking-wide">
-                <DollarSign className="w-4 h-4 mr-1" />
-                DONATE
-              </a>
-
-              <a href="/login" className="flex items-center text-sm font-medium text-gray-800 hover:text-amber-500 transition-colors">
-                <User className="w-4 h-4 mr-1" />
-                Login
-              </a>
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 text-gray-800"
-                aria-label="Toggle menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden border-t border-gray-100 py-4">
-              <div className="space-y-3">
-                <a href="/" className="block px-4 py-2 text-sm font-medium text-gray-800 uppercase">Home</a>
-                <div className="px-4 py-2">
-                  <span className="text-sm font-medium text-amber-500 uppercase flex items-center">
-                    <Map className="w-4 h-4 mr-2" /> MHMA
-                  </span>
-                  <div className="ml-6 mt-2 space-y-2">
-                    <a href="/board" className="block text-sm text-gray-600 hover:text-amber-500">Board</a>
-                    <a href="/committees" className="block text-sm text-amber-500 font-medium">Committees</a>
-                    <a href="/bylaws" className="block text-sm text-gray-600 hover:text-amber-500">Bylaws</a>
-                    <a href="/feedback" className="block text-sm text-gray-600 hover:text-amber-500">Feedback</a>
-                  </div>
-                </div>
-                <div className="px-4 py-2">
-                  <span className="text-sm font-medium text-gray-800 uppercase flex items-center">
-                    <BookOpen className="w-4 h-4 mr-2" /> Programs
-                  </span>
-                  <div className="ml-6 mt-2 space-y-2">
-                    <a href="/programs" className="block text-sm text-gray-600 hover:text-amber-500">All Programs</a>
-                    <a href="/programs/maktab-program" className="block text-sm text-gray-600 hover:text-amber-500">MHMA Maktab</a>
-                    <a href="/zakat" className="block text-sm text-gray-600 hover:text-amber-500">Zakat</a>
-                  </div>
-                </div>
-                <a href="/donate" className="block px-4 py-2 text-sm font-medium text-gray-800 uppercase">
-                  <DollarSign className="w-4 h-4 inline mr-2" /> Donate
-                </a>
-                <a href="/login" className="block px-4 py-2 text-sm font-medium text-gray-800">
-                  <User className="w-4 h-4 inline mr-2" /> Login
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
-
+      <main className="pt-20">
       {/* Committees Section */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -272,6 +117,7 @@ export default function CommitteesPage() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white">

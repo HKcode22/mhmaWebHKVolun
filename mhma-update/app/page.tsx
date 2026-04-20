@@ -154,7 +154,7 @@ export default function HomePage() {
           {/* Live Prayer Times Widget - Masjidi App */}
           <div className="w-full flex justify-center">
             <iframe
-              src="http://ummahsoft.org/salahtime/masjid-embed/prayer_widet.php?masjid_id=53487"
+              src="https://ummahsoft.org/salahtime/masjid-embed/prayer_widet.php?masjid_id=53487"
               width="450"
               height="500"
               frameBorder="0"

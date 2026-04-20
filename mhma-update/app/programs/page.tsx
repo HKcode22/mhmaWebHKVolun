@@ -24,6 +24,7 @@ interface Program {
     program_title?: string;
     program_description?: string;
     program_image?: string;
+    use_hardcoded_version?: boolean;
   };
   featured_media?: number;
 }
@@ -119,7 +120,7 @@ export default function ProgramsPage() {
     const fetchPrograms = async () => {
       try {
         const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
-        const response = await fetch(`${WP_API_URL}/wp/v2/pages?per_page=100&parent=0`);
+        const response = await fetch(`${WP_API_URL}/wp/v2/pages?per_page=100`);
         if (!response.ok) {
           throw new Error("Failed to fetch programs");
         }
@@ -178,40 +179,96 @@ export default function ProgramsPage() {
               <div className="text-center py-12">Loading programs...</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {/* Hardcoded programs */}
-                {hardcodedPrograms.map((program) => (
-                  <Link
-                    key={program.href}
-                    href={program.href}
-                    className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-                  >
-                    <div className="relative aspect-[16/10] overflow-hidden">
-                      <Image
-                        src={program.image}
-                        alt={program.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
-                          {program.title}
-                        </h3>
+                {/* Hardcoded programs - but check if WordPress version exists and use_hardcoded_version is false */}
+                {hardcodedPrograms.map((program) => {
+                  // Check if there's a WordPress version of this program
+                  const programSlug = program.href.replace('/programs/', '');
+                  const wpVersion = wpPrograms.find(wp => wp.slug === programSlug);
+                  const useHardcoded = wpVersion?.acf?.use_hardcoded_version === true;
+
+                  // Debug logging for Arabic Academy
+                  if (programSlug === 'arabic-academy') {
+                    console.log("=== Arabic Academy Debug ===");
+                    console.log("Program slug:", programSlug);
+                    console.log("WordPress programs:", wpPrograms.map(wp => ({ id: wp.id, slug: wp.slug })));
+                    console.log("WordPress version found:", !!wpVersion);
+                    console.log("WordPress version data:", wpVersion);
+                    console.log("Use hardcoded:", useHardcoded);
+                    console.log("Program title from WordPress:", wpVersion?.acf?.program_title);
+                  }
+
+                  // Use WordPress data if available and not set to use hardcoded version
+                  if (wpVersion && !useHardcoded) {
+                    return (
+                      <Link
+                        key={program.href}
+                        href={program.href}
+                        className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                      >
+                        <div className="relative aspect-[16/10] overflow-hidden">
+                          <Image
+                            src={programImageUrls[wpVersion.id] || wpVersion.acf?.program_image || program.image}
+                            alt={wpVersion.acf?.program_title || program.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
+                              {wpVersion.acf?.program_title || program.title}
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-white">
+                          <h2 className="text-lg font-semibold text-gray-800 uppercase mb-2 group-hover:text-[#c9a227] transition-colors">
+                            {wpVersion.acf?.program_title || program.title}
+                          </h2>
+                          <div className="w-full h-px bg-gray-200 mb-3"></div>
+                          <p className="text-gray-600 text-sm line-clamp-2">
+                            {wpVersion.acf?.program_description || program.description}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  }
+
+                  // Use hardcoded version
+                  return (
+                    <Link
+                      key={program.href}
+                      href={program.href}
+                      className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                    >
+                      <div className="relative aspect-[16/10] overflow-hidden">
+                        <Image
+                          src={program.image}
+                          alt={program.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
+                            {program.title}
+                          </h3>
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-4 bg-white">
-                      <h2 className="text-lg font-semibold text-gray-800 uppercase mb-2 group-hover:text-[#c9a227] transition-colors">
-                        {program.title}
-                      </h2>
-                      <div className="w-full h-px bg-gray-200 mb-3"></div>
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {program.description}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-                {/* WordPress programs */}
-                {wpPrograms.map((program) => (
+                      <div className="p-4 bg-white">
+                        <h2 className="text-lg font-semibold text-gray-800 uppercase mb-2 group-hover:text-[#c9a227] transition-colors">
+                          {program.title}
+                        </h2>
+                        <div className="w-full h-px bg-gray-200 mb-3"></div>
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {program.description}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+                {/* WordPress programs (excluding those that match hardcoded programs) */}
+                {wpPrograms
+                  .filter(program => !hardcodedPrograms.some(hc => hc.href === `/programs/${program.slug}`))
+                  .map((program) => (
                   <Link
                     key={program.id}
                     href={`/programs/${program.slug}`}

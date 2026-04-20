@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Edit, Facebook, Instagram, Twitter, Linkedin, Youtube } from "lucide-react";
-import { fetchGraphQL } from "@/lib/wordpress";
 import Navigation from "@/components/Navigation";
 
 interface ProgramData {
   title: string;
   description: string;
+  content: string;
   stat1Label: string;
   stat1Value: string;
   stat2Label: string;
@@ -39,56 +39,56 @@ export default function ArabicAcademyPage() {
     console.log("Arabic Academy - Should show edit button?", { isLoggedIn: !!token, programId });
 
     const fetchProgramData = async () => {
-      const query = `
-        query GetProgramPage {
-          page(id: "arabic-academy", idType: SLUG) {
-            databaseId
-            title
-            content
-            acfProgramContent {
-              program_title
-              program_description
-              program_image {
-                sourceUrl
-              }
-              stat1_label
-              stat1_value
-              stat2_label
-              stat2_value
-              stat3_label
-              stat3_value
-              stat4_label
-              stat4_value
-              additional_content
-            }
-          }
+      try {
+        const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+        const response = await fetch(`${WP_API_URL}/wp/v2/pages?slug=arabic-academy`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch program");
         }
-      `;
-
-      const data = await fetchGraphQL(query);
-      console.log("GraphQL data:", data);
-      if (data?.page) {
-        setProgramId(data.page.databaseId);
-        const programData = {
-          title: data.page.acfProgramContent?.program_title || data.page.title || "LEARN ARABIC LANGUAGE",
-          description: data.page.acfProgramContent?.program_description || "",
-          stat1Label: data.page.acfProgramContent?.stat1_label || "Students",
-          stat1Value: data.page.acfProgramContent?.stat1_value || "25",
-          stat2Label: data.page.acfProgramContent?.stat2_label || "Days/Week",
-          stat2Value: data.page.acfProgramContent?.stat2_value || "5",
-          stat3Label: data.page.acfProgramContent?.stat3_label || "",
-          stat3Value: data.page.acfProgramContent?.stat3_value || "",
-          stat4Label: data.page.acfProgramContent?.stat4_label || "",
-          stat4Value: data.page.acfProgramContent?.stat4_value || "",
-          additionalContent: data.page.acfProgramContent?.additional_content || "",
-        };
-        console.log("Program data set:", programData);
-        setProgramData(programData);
-      } else {
-        console.log("No page data found, using fallbacks");
+        const data = await response.json();
+        console.log("REST API data:", data);
+        if (data && data.length > 0) {
+          const page = data[0];
+          setProgramId(page.id);
+          const programData = {
+            title: page.acf?.program_title || page.title?.rendered || "LEARN ARABIC LANGUAGE",
+            description: page.acf?.program_description || "",
+            content: page.content?.rendered || "",
+            stat1Label: page.acf?.stat1_label || "Students",
+            stat1Value: page.acf?.stat1_value || "25",
+            stat2Label: page.acf?.stat2_label || "Days/Week",
+            stat2Value: page.acf?.stat2_value || "5",
+            stat3Label: page.acf?.stat3_label || "",
+            stat3Value: page.acf?.stat3_value || "",
+            stat4Label: page.acf?.stat4_label || "",
+            stat4Value: page.acf?.stat4_value || "",
+            additionalContent: page.acf?.additional_content || "",
+          };
+          console.log("Program data set:", programData);
+          setProgramData(programData);
+        } else {
+          console.log("No page data found, using fallbacks");
+          setProgramData({
+            title: "LEARN ARABIC LANGUAGE",
+            description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
+            content: "",
+            stat1Label: "Students",
+            stat1Value: "25",
+            stat2Label: "Days/Week",
+            stat2Value: "5",
+            stat3Label: "",
+            stat3Value: "",
+            stat4Label: "",
+            stat4Value: "",
+            additionalContent: "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching program data:", error);
         setProgramData({
           title: "LEARN ARABIC LANGUAGE",
           description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
+          content: "",
           stat1Label: "Students",
           stat1Value: "25",
           stat2Label: "Days/Week",
@@ -127,6 +127,9 @@ export default function ArabicAcademyPage() {
                   <p className="text-lg text-gray-700 mb-4">
                     {programData?.description || "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language."}
                   </p>
+                  {programData?.content && (
+                    <div className="mt-6" dangerouslySetInnerHTML={{ __html: programData.content }} />
+                  )}
                   {programData?.additionalContent && (
                     <div className="mt-6" dangerouslySetInnerHTML={{ __html: programData.additionalContent }} />
                   )}

@@ -26,6 +26,8 @@ interface ACFData {
   program_title?: string;
   program_description?: string;
   program_image?: string;
+  program_image_poster?: string;
+  use_hardcoded_version?: boolean;
   stat_1_label?: string;
   stat_1_value?: string;
   stat_2_label?: string;
@@ -74,6 +76,9 @@ function EditProgramContent() {
   const [programImage, setProgramImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [imageId, setImageId] = useState<number | null>(null);
+  const [programPosterImage, setProgramPosterImage] = useState<File | null>(null);
+  const [posterImagePreview, setPosterImagePreview] = useState<string>("");
+  const [posterImageId, setPosterImageId] = useState<number | null>(null);
 
   useEffect(() => {
     // Check authentication
@@ -136,6 +141,12 @@ function EditProgramContent() {
             setImageId(data.acf.program_image);
           }
         }
+        if (data.acf?.program_image_poster) {
+          setPosterImagePreview(data.acf.program_image_poster);
+          if (typeof data.acf.program_image_poster === 'number') {
+            setPosterImageId(data.acf.program_image_poster);
+          }
+        }
       } else {
         // Numeric ID - fetch by ID
         const response = await fetch(`${WP_API_URL}/wp/v2/pages/${programId}`, {
@@ -161,6 +172,12 @@ function EditProgramContent() {
             setImageId(data.acf.program_image);
           }
         }
+        if (data.acf?.program_image_poster) {
+          setPosterImagePreview(data.acf.program_image_poster);
+          if (typeof data.acf.program_image_poster === 'number') {
+            setPosterImageId(data.acf.program_image_poster);
+          }
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load program");
@@ -177,6 +194,18 @@ function EditProgramContent() {
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePosterImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProgramPosterImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPosterImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -198,7 +227,9 @@ function EditProgramContent() {
       console.log("Token exists:", !!token);
 
       let programImageId = imageId || null;
+      let newPosterImageId = posterImageId || null;
       console.log("Current image ID:", programImageId);
+      console.log("Current poster image ID:", newPosterImageId);
 
       // Upload image if a new one is selected
       if (programImage) {
@@ -229,6 +260,35 @@ function EditProgramContent() {
         }
       }
 
+      // Upload poster image if a new one is selected
+      if (programPosterImage) {
+        console.log("=== UPLOADING NEW POSTER IMAGE ===");
+        const formDataPoster = new FormData();
+        formDataPoster.append("file", programPosterImage);
+
+        const posterResponse = await fetch(`${WP_API_URL}/wp/v2/media`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formDataPoster,
+        });
+
+        console.log("Poster image upload response status:", posterResponse.status);
+
+        if (posterResponse.ok) {
+          const posterData = await posterResponse.json();
+          newPosterImageId = posterData.id;
+          console.log("Poster image upload success. New ID:", newPosterImageId);
+          console.log("Poster image upload response data:", posterData);
+        } else {
+          const errorText = await posterResponse.text();
+          console.error("Poster image upload failed. Status:", posterResponse.status);
+          console.error("Error response:", errorText);
+          throw new Error(`Failed to upload poster image: ${posterResponse.status}`);
+        }
+      }
+
       console.log("=== UPDATING PROGRAM ===");
       console.log("Updating page ID:", programId);
       console.log("Program data ID:", program?.id);
@@ -245,6 +305,7 @@ function EditProgramContent() {
         acf: {
           ...formData.acf,
           program_image: programImageId,
+          program_image_poster: newPosterImageId,
         },
       };
       console.log("Update data being sent:", JSON.stringify(updateData, null, 2));
@@ -536,6 +597,29 @@ function EditProgramContent() {
                   </div>
 
                   <div>
+                    <label htmlFor="program_image_poster" className="block text-sm font-medium text-gray-700 mb-2">
+                      Program Poster Image (optional)
+                    </label>
+                    <input
+                      type="file"
+                      id="program_image_poster"
+                      accept="image/*"
+                      onChange={handlePosterImageUpload}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#c9a227] focus:border-transparent outline-none transition-all"
+                    />
+                    {posterImagePreview && (
+                      <div className="mt-2 relative w-full h-48">
+                        <Image
+                          src={posterImagePreview}
+                          alt="Poster image preview"
+                          fill
+                          className="object-contain rounded-md"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
                     <label htmlFor="program_title" className="block text-sm font-medium text-gray-700 mb-2">
                       Program Title
                     </label>
@@ -550,6 +634,26 @@ function EditProgramContent() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#c9a227] focus:border-transparent outline-none transition-all"
                     />
                   </div>
+
+                  {(program?.slug === "arabic-academy") && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                      <label htmlFor="use_hardcoded_version" className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          id="use_hardcoded_version"
+                          checked={formData.acf.use_hardcoded_version || false}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            acf: { ...formData.acf, use_hardcoded_version: e.target.checked }
+                          })}
+                          className="mr-2 h-4 w-4 text-[#c9a227] focus:ring-[#c9a227] border-gray-300 rounded"
+                        />
+                        <span className="text-sm text-gray-700">
+                          <strong>Use Hardcoded Version:</strong> If checked, the Arabic Academy page will use the hardcoded version instead of WordPress data. This allows you to revert to the original hardcoded design.
+                        </span>
+                      </label>
+                    </div>
+                  )}
 
                   <div>
                     <label htmlFor="program_description" className="block text-sm font-medium text-gray-700 mb-2">

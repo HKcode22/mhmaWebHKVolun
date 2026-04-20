@@ -12,6 +12,12 @@ import {
   Twitter,
   Linkedin,
   Youtube,
+  Home,
+  Landmark,
+  BookOpen,
+  Heart,
+  User,
+  LogOut,
 } from "lucide-react";
 
 interface NavigationProps {
@@ -65,10 +71,12 @@ export default function Navigation({ currentPage }: NavigationProps) {
             </Link>
           </div>
           <div className="hidden lg:flex items-center space-x-8">
-            <Link href="/" className={`transition-colors font-medium ${currentPage === "home" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>HOME</Link>
+            <Link href="/" className={`flex items-center transition-colors font-medium ${currentPage === "home" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
+              <Home className="mr-1 h-4 w-4" /> HOME
+            </Link>
             <div className="relative" onMouseEnter={() => setAboutDropdownOpen(true)} onMouseLeave={() => setAboutDropdownOpen(false)}>
               <Link href="/mhmapage" className={`flex items-center transition-colors font-medium ${currentPage === "mhma" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-                MHMA<ChevronDown className="ml-1 h-4 w-4" />
+                <Landmark className="mr-1 h-4 w-4" /> MHMA<ChevronDown className="ml-1 h-4 w-4" />
               </Link>
               {aboutDropdownOpen && (
                 <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
@@ -81,7 +89,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
             </div>
             <div className="relative" onMouseEnter={() => setProgramsDropdownOpen(true)} onMouseLeave={() => setProgramsDropdownOpen(false)}>
               <Link href="/programs" className={`flex items-center transition-colors font-medium ${currentPage === "programs" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-                PROGRAMS<ChevronDown className="ml-1 h-4 w-4" />
+                <BookOpen className="mr-1 h-4 w-4" /> PROGRAMS<ChevronDown className="ml-1 h-4 w-4" />
               </Link>
               {programsDropdownOpen && (
                 <div className="absolute top-full left-0 mt-0 w-56 bg-white shadow-lg rounded-md py-2 z-50">
@@ -91,19 +99,23 @@ export default function Navigation({ currentPage }: NavigationProps) {
                 </div>
               )}
             </div>
-            <Link href="/donate" target="_blank" className="text-gray-700 hover:text-[#c9a227] transition-colors font-medium">DONATE</Link>
+            <Link href="/donate" target="_blank" className="flex items-center text-gray-700 hover:text-[#c9a227] transition-colors font-medium">
+              <Heart className="mr-1 h-4 w-4" /> DONATE
+            </Link>
             {isLoggedIn ? (
               <>
                 <Link href="/dashboard" className="text-[#c9a227] font-medium">DASHBOARD</Link>
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 hover:text-red-600 transition-colors font-medium"
+                  className="flex items-center text-gray-700 hover:text-red-600 transition-colors font-medium"
                 >
-                  LOGOUT
+                  <LogOut className="mr-1 h-4 w-4" /> LOGOUT
                 </button>
               </>
             ) : (
-              <Link href="/login" className="text-gray-700 hover:text-[#c9a227] transition-colors font-medium">LOGIN</Link>
+              <Link href="/login" className="flex items-center text-gray-700 hover:text-[#c9a227] transition-colors font-medium">
+                <User className="mr-1 h-4 w-4" /> LOGIN
+              </Link>
             )}
           </div>
           <div className="lg:hidden">
@@ -115,24 +127,34 @@ export default function Navigation({ currentPage }: NavigationProps) {
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white border-t">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link href="/" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">HOME</Link>
-              <Link href="/mhmapage" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">MHMA</Link>
+              <Link href="/" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
+                <Home className="mr-2 h-4 w-4" /> HOME
+              </Link>
+              <Link href="/mhmapage" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
+                <Landmark className="mr-2 h-4 w-4" /> MHMA
+              </Link>
               <Link href="/board" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">BOARD</Link>
               <Link href="/committees" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">COMMITTEES</Link>
-              <Link href="/programs" className="block px-3 py-2 text-[#c9a227] font-medium">PROGRAMS</Link>
-              <Link href="/donate" target="_blank" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">DONATE</Link>
+              <Link href="/programs" className="flex items-center px-3 py-2 text-[#c9a227] font-medium">
+                <BookOpen className="mr-2 h-4 w-4" /> PROGRAMS
+              </Link>
+              <Link href="/donate" target="_blank" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
+                <Heart className="mr-2 h-4 w-4" /> DONATE
+              </Link>
               {isLoggedIn ? (
                 <>
                   <Link href="/dashboard" className="block px-3 py-2 text-[#c9a227] font-medium">DASHBOARD</Link>
                   <button
                     onClick={handleLogout}
-                    className="block px-3 py-2 text-gray-700 hover:text-red-600 font-medium w-full text-left"
+                    className="flex items-center px-3 py-2 text-gray-700 hover:text-red-600 font-medium w-full text-left"
                   >
-                    LOGOUT
+                    <LogOut className="mr-2 h-4 w-4" /> LOGOUT
                   </button>
                 </>
               ) : (
-                <Link href="/login" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">LOGIN</Link>
+                <Link href="/login" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
+                  <User className="mr-2 h-4 w-4" /> LOGIN
+                </Link>
               )}
             </div>
           </div>

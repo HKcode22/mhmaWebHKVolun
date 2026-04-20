@@ -26,6 +26,7 @@ interface FormData {
   programTitle: string;
   programDescription: string;
   programImage: string;
+  programImagePoster: string;
   stat1Label: string;
   stat1Value: string;
   stat2Label: string;
@@ -54,6 +55,7 @@ export default function NewProgramPage() {
     programTitle: "",
     programDescription: "",
     programImage: "",
+    programImagePoster: "",
     stat1Label: "Students",
     stat1Value: "",
     stat2Label: "Days/Week",
@@ -65,7 +67,9 @@ export default function NewProgramPage() {
     additionalContent: "",
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingPosterImage, setUploadingPosterImage] = useState(false);
   const [programImageId, setProgramImageId] = useState<number | null>(null);
+  const [programImagePosterId, setProgramImagePosterId] = useState<number | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("jwt_token");
@@ -116,6 +120,47 @@ export default function NewProgramPage() {
     }
   };
 
+  const handlePosterImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    console.log("Starting poster image upload:", file.name);
+    setUploadingPosterImage(true);
+    try {
+      const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+      const token = localStorage.getItem("jwt_token");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      console.log("Uploading poster to WordPress media API...");
+      const response = await fetch(`${WP_API_URL}/wp/v2/media`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      console.log("Poster image upload response status:", response.status);
+      const data = await response.json();
+      console.log("Poster image upload response data:", data);
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to upload poster image");
+      }
+
+      console.log("Setting programImagePosterId to:", data.id);
+      setProgramImagePosterId(data.id);
+      setFormData((prev) => ({ ...prev, programImagePoster: data.source_url }));
+    } catch (err) {
+      console.error("Poster image upload error:", err);
+      setError(err instanceof Error ? err.message : "Failed to upload poster image");
+    } finally {
+      setUploadingPosterImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -142,6 +187,7 @@ export default function NewProgramPage() {
             program_title: formData.programTitle,
             program_description: formData.programDescription,
             program_image: programImageId,
+            program_image_poster: programImagePosterId,
             stat_1_label: formData.stat1Label,
             stat_1_value: formData.stat1Value,
             stat_2_label: formData.stat2Label,
@@ -296,6 +342,23 @@ export default function NewProgramPage() {
                 {formData.programImage && (
                   <div className="mt-2">
                     <img src={formData.programImage} alt="Program preview" className="h-32 w-auto rounded border" />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Program Poster Image (optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePosterImageUpload}
+                  disabled={uploadingPosterImage}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#c9a227]"
+                />
+                {uploadingPosterImage && <p className="text-xs text-gray-500 mt-1">Uploading poster image...</p>}
+                {formData.programImagePoster && (
+                  <div className="mt-2">
+                    <img src={formData.programImagePoster} alt="Poster preview" className="h-32 w-auto rounded border" />
                   </div>
                 )}
               </div>

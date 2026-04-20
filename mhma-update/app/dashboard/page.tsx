@@ -77,6 +77,68 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteProgram = async (programId: number, programTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${programTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+      const token = localStorage.getItem("jwt_token");
+      const userRole = localStorage.getItem("user_role");
+
+      console.log("=== DELETE PROGRAM START ===");
+      console.log("Program ID:", programId);
+      console.log("Program Title:", programTitle);
+      console.log("Token exists:", !!token);
+      console.log("User role:", userRole);
+      console.log("Delete URL:", `${WP_API_URL}/wp/v2/pages/${programId}?force=true`);
+
+      const response = await fetch(`${WP_API_URL}/wp/v2/pages/${programId}?force=true`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Delete response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Delete failed. Response:", errorText);
+
+        if (response.status === 403) {
+          setError("Permission denied: Your WordPress user account doesn't have permission to delete pages. Please contact the administrator to grant you 'delete_pages' capability, or log in as an administrator in WordPress.");
+        } else {
+          throw new Error(`Failed to delete program: ${response.status} - ${errorText}`);
+        }
+      } else {
+        console.log("Delete successful");
+        // Refresh programs list
+        fetchPrograms();
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError(err instanceof Error ? err.message : "Failed to delete program");
+    }
+  };
+
+  // Hardcoded program slugs that should not show delete button
+  const hardcodedProgramSlugs = [
+    "arabic-academy",
+    "boy-scouts",
+    "ladies-meetup",
+    "youth-sports-league",
+    "family-night",
+    "jummah-and-salah",
+    "learn-3d-printing",
+    "maktab-program",
+    "quran-hifz-program",
+    "urdu-academy",
+    "wish",
+    "islamic-center-of-mountain-house",
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation currentPage="dashboard" />
@@ -165,6 +227,14 @@ export default function DashboardPage() {
                         >
                           <Edit className="h-5 w-5" />
                         </Link>
+                        {!hardcodedProgramSlugs.includes(program.slug) && (
+                          <button
+                            onClick={() => handleDeleteProgram(program.id, program.title.rendered)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
