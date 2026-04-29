@@ -98,16 +98,16 @@ const hardcodedPrograms: HardcodedProgram[] = [
     href: "/programs/quran-hifz-program",
   },
   {
-    title: "Arabic Academy",
-    description: "We offer a LUSD certified Arabic language course",
-    image: "https://mhma.us/wp-content/uploads/2016/08/Arabic.png",
-    href: "/programs/arabic-academy",
-  },
-  {
     title: "Boy Scouts",
     description: "Scouting activities for Boys and Girls",
     image: "https://mhma.us/wp-content/uploads/2024/06/Scouts.webp",
     href: "/programs/boy-scouts",
+  },
+  {
+    title: "Arabic Academy",
+    description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
+    image: "https://mhma.us/wp-content/uploads/2016/08/Arabic.png",
+    href: "/programs/arabic-academy",
   },
 ];
 
@@ -120,7 +120,7 @@ export default function ProgramsPage() {
     const fetchPrograms = async () => {
       try {
         const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
-        const response = await fetch(`${WP_API_URL}/wp/v2/pages?per_page=100`);
+        const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=70&per_page=100`);
         if (!response.ok) {
           throw new Error("Failed to fetch programs");
         }
@@ -203,16 +203,16 @@ export default function ProgramsPage() {
                       <Link
                         key={program.href}
                         href={program.href}
-                        className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                        className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
                       >
                         <div className="relative aspect-[16/10] overflow-hidden">
                           <Image
                             src={programImageUrls[wpVersion.id] || wpVersion.acf?.program_image || program.image}
                             alt={wpVersion.acf?.program_title || program.title}
                             fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="object-cover group-hover:scale-110 transition-transform duration-300"
                           />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
                               {wpVersion.acf?.program_title || program.title}
@@ -237,16 +237,16 @@ export default function ProgramsPage() {
                     <Link
                       key={program.href}
                       href={program.href}
-                      className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                      className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
                     >
                       <div className="relative aspect-[16/10] overflow-hidden">
                         <Image
                           src={program.image}
                           alt={program.title}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
                         />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
                             {program.title}
@@ -272,9 +272,9 @@ export default function ProgramsPage() {
                   <Link
                     key={program.id}
                     href={`/programs/${program.slug}`}
-                    className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow relative"
+                    className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1 relative"
                   >
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded z-10">
+                    <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded z-10 font-semibold">
                       New
                     </div>
                     <div className="relative aspect-[16/10] overflow-hidden">
@@ -282,9 +282,9 @@ export default function ProgramsPage() {
                         src={programImageUrls[program.id] || program.acf?.program_image || "https://mhma.us/wp-content/uploads/2024/06/MHMA-Default-Program.webp"}
                         alt={program.title.rendered}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover group-hover:scale-110 transition-transform duration-300"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
                           {program.acf?.program_title || program.title.rendered}
@@ -297,7 +297,7 @@ export default function ProgramsPage() {
                       </h2>
                       <div className="w-full h-px bg-gray-200 mb-3"></div>
                       <p className="text-gray-600 text-sm line-clamp-2">
-                        {program.acf?.program_description || "Program description"}
+                        {program.acf?.program_description || program.title.rendered}
                       </p>
                     </div>
                   </Link>

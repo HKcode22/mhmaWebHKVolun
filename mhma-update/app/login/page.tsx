@@ -39,11 +39,12 @@ export default function LoginPage() {
     setSuccess("");
     setLoading(true);
 
-    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "https://my-wp-backend.duckdns.org/wp-json";
 
     try {
       if (userType === "new") {
         // Registration
+        console.log("Attempting registration to:", `${WP_API_URL}/wp/v2/users/register`);
         const response = await fetch(`${WP_API_URL}/wp/v2/users/register`, {
           method: "POST",
           headers: {
@@ -56,6 +57,8 @@ export default function LoginPage() {
           }),
         });
 
+        console.log("Registration response status:", response.status);
+        console.log("Registration response ok:", response.ok);
         const data = await response.json();
 
         if (!response.ok) {
@@ -66,6 +69,8 @@ export default function LoginPage() {
         setUserType("existing");
       } else {
         // Login
+        console.log("Attempting login to:", `${WP_API_URL}/jwt-auth/v1/token`);
+        console.log("Login data:", { username: formData.username, password: "***" });
         const response = await fetch(`${WP_API_URL}/jwt-auth/v1/token`, {
           method: "POST",
           headers: {
@@ -77,6 +82,8 @@ export default function LoginPage() {
           }),
         });
 
+        console.log("Login response status:", response.status);
+        console.log("Login response ok:", response.ok);
         const data = await response.json();
 
         if (!response.ok) {
@@ -86,10 +93,32 @@ export default function LoginPage() {
         // Store token in localStorage
         if (data.token) {
           localStorage.setItem("jwt_token", data.token);
-          const userRole = data.user_role || data.role || "subscriber";
-          localStorage.setItem("user_role", userRole);
           localStorage.setItem("username", data.user_nicename || formData.username);
-          console.log("Login successful. Role:", userRole, "User type selected:", userType);
+
+          // Fetch actual user role from WordPress
+          try {
+            const userResponse = await fetch(`${WP_API_URL}/wp/v2/users/me`, {
+              headers: {
+                Authorization: `Bearer ${data.token}`,
+              },
+            });
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              const actualRole = userData.roles && userData.roles.length > 0 ? userData.roles[0] : "subscriber";
+              localStorage.setItem("user_role", actualRole);
+              console.log("Login successful. Actual role from WordPress:", actualRole, "User type selected:", userType);
+            } else {
+              // Fallback to JWT response if user fetch fails
+              const userRole = data.user_role || data.role || "subscriber";
+              localStorage.setItem("user_role", userRole);
+              console.log("Login successful. Role from JWT (user fetch failed):", userRole, "User type selected:", userType);
+            }
+          } catch (err) {
+            // Fallback to JWT response if user fetch fails
+            const userRole = data.user_role || data.role || "subscriber";
+            localStorage.setItem("user_role", userRole);
+            console.log("Login successful. Role from JWT (user fetch error):", userRole, "User type selected:", userType);
+          }
         }
 
         setSuccess("Login successful! Redirecting...");
@@ -102,6 +131,8 @@ export default function LoginPage() {
         }, 1000);
       }
     } catch (err) {
+      console.error("Login error:", err);
+      console.error("Error details:", JSON.stringify(err));
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);

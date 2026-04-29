@@ -18,6 +18,8 @@ import {
   Heart,
   User,
   LogOut,
+  Calendar,
+  BookText,
 } from "lucide-react";
 
 interface NavigationProps {
@@ -28,6 +30,8 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
   const [programsDropdownOpen, setProgramsDropdownOpen] = useState(false);
+  const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false);
+  const [donateDropdownOpen, setDonateDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
 
@@ -84,9 +88,25 @@ export default function Navigation({ currentPage }: NavigationProps) {
                   <Link href="/committees" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">COMMITTEES</Link>
                   <Link href="/bylaws" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">BYLAWS</Link>
                   <Link href="/feedback" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">FEEDBACK</Link>
+                  <Link href="/serving-our-community" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">SERVING OUR COMMUNITY</Link>
+                  <Link href="/community-commitment" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">COMMUNITY COMMITMENT</Link>
                 </div>
               )}
             </div>
+            <div className="relative" onMouseEnter={() => setEventsDropdownOpen(true)} onMouseLeave={() => setEventsDropdownOpen(false)}>
+              <Link href="/events" className={`flex items-center transition-colors font-medium ${currentPage === "events" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
+                <Calendar className="mr-1 h-4 w-4" /> EVENTS<ChevronDown className="ml-1 h-4 w-4" />
+              </Link>
+              {eventsDropdownOpen && (
+                <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
+                  <Link href="/events" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">ALL EVENTS</Link>
+                  <Link href="/event-scheduling-request" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">EVENT SCHEDULING REQUEST</Link>
+                </div>
+              )}
+            </div>
+            <Link href="/journal" className={`flex items-center transition-colors font-medium ${currentPage === "journal" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
+              <BookText className="mr-1 h-4 w-4" /> JOURNAL
+            </Link>
             <div className="relative" onMouseEnter={() => setProgramsDropdownOpen(true)} onMouseLeave={() => setProgramsDropdownOpen(false)}>
               <Link href="/programs" className={`flex items-center transition-colors font-medium ${currentPage === "programs" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
                 <BookOpen className="mr-1 h-4 w-4" /> PROGRAMS<ChevronDown className="ml-1 h-4 w-4" />
@@ -99,9 +119,17 @@ export default function Navigation({ currentPage }: NavigationProps) {
                 </div>
               )}
             </div>
-            <Link href="/donate" target="_blank" className="flex items-center text-gray-700 hover:text-[#c9a227] transition-colors font-medium">
-              <Heart className="mr-1 h-4 w-4" /> DONATE
-            </Link>
+            <div className="relative" onMouseEnter={() => setDonateDropdownOpen(true)} onMouseLeave={() => setDonateDropdownOpen(false)}>
+              <Link href="/donate" className={`flex items-center transition-colors font-medium ${currentPage === "donate" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
+                <Heart className="mr-1 h-4 w-4" /> DONATE<ChevronDown className="ml-1 h-4 w-4" />
+              </Link>
+              {donateDropdownOpen && (
+                <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
+                  <Link href="/donate" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">GENERAL DONATION</Link>
+                  <Link href="/masjid-construction" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">MASJID CONSTRUCTION</Link>
+                </div>
+              )}
+            </div>
             {isLoggedIn ? (
               <>
                 <Link href="/dashboard" className="text-[#c9a227] font-medium">DASHBOARD</Link>
@@ -135,6 +163,12 @@ export default function Navigation({ currentPage }: NavigationProps) {
               </Link>
               <Link href="/board" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">BOARD</Link>
               <Link href="/committees" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">COMMITTEES</Link>
+              <Link href="/#activities" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
+                <Calendar className="mr-2 h-4 w-4" /> EVENTS
+              </Link>
+              <Link href="/journal" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
+                <BookText className="mr-2 h-4 w-4" /> JOURNAL
+              </Link>
               <Link href="/programs" className="flex items-center px-3 py-2 text-[#c9a227] font-medium">
                 <BookOpen className="mr-2 h-4 w-4" /> PROGRAMS
               </Link>

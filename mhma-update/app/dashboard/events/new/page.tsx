@@ -20,6 +20,10 @@ interface FormData {
   rsvpLink: string;
   eventDescription: string;
   posterImage: File | null;
+  showDate: boolean;
+  showTime: boolean;
+  showLocation: boolean;
+  showDescription: boolean;
 }
 
 export default function NewEventPage() {
@@ -39,6 +43,10 @@ export default function NewEventPage() {
     rsvpLink: "",
     eventDescription: "",
     posterImage: null,
+    showDate: false,
+    showTime: false,
+    showLocation: false,
+    showDescription: false,
   });
 
   useEffect(() => {
@@ -93,8 +101,15 @@ export default function NewEventPage() {
         mediaId = mediaData.id;
       }
 
-      // Create new event post
-      const response = await fetch(`${WP_API_URL}/wp/v2/events`, {
+      // Format date from YYYY-MM-DD to YYYYMMDD for WordPress ACF
+      let formattedDate = formData.eventDate;
+      if (formattedDate) {
+        const [year, month, day] = formattedDate.split('-');
+        formattedDate = `${year}${month}${day}`;
+      }
+
+      // Create new event page (child of Events page)
+      const response = await fetch(`${WP_API_URL}/wp/v2/pages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,13 +119,19 @@ export default function NewEventPage() {
           title: formData.title,
           content: formData.eventDescription,
           status: "publish",
+          parent: 277, // Events page ID
           acf: {
             event_poster: mediaId,
-            event_date: formData.eventDate,
+            event_date: formattedDate,
             event_time: formData.eventTime,
             event_location: formData.eventLocation,
-            rsvp_link: formData.rsvpLink,
+            event_rsvp_link: formData.rsvpLink,
             event_description: formData.eventDescription,
+            event_name: formData.title,
+            show_date: formData.showDate,
+            show_time: formData.showTime,
+            show_location: formData.showLocation,
+            show_description: formData.showDescription,
           },
         }),
       });
@@ -309,6 +330,49 @@ export default function NewEventPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#c9a227]"
                   placeholder="Describe the event..."
                 />
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">Display Options</p>
+                <p className="text-xs text-gray-500 mb-3">Choose which event details to show below the poster (if already on poster, uncheck to avoid redundancy)</p>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.showDate}
+                      onChange={(e) => setFormData({ ...formData, showDate: e.target.checked })}
+                      className="h-4 w-4 text-[#c9a227] focus:ring-[#c9a227] border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Date</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.showTime}
+                      onChange={(e) => setFormData({ ...formData, showTime: e.target.checked })}
+                      className="h-4 w-4 text-[#c9a227] focus:ring-[#c9a227] border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Time</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.showLocation}
+                      onChange={(e) => setFormData({ ...formData, showLocation: e.target.checked })}
+                      className="h-4 w-4 text-[#c9a227] focus:ring-[#c9a227] border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Location</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.showDescription}
+                      onChange={(e) => setFormData({ ...formData, showDescription: e.target.checked })}
+                      className="h-4 w-4 text-[#c9a227] focus:ring-[#c9a227] border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Description</span>
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end">

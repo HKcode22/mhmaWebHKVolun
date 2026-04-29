@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { fetchMHMAManagement, fetchActivitiesPosts, MHMASiteManagement, WordPressPost } from "@/lib/wordpress";
+import { fetchMHMAManagement, fetchActivitiesPosts, fetchEvents, MHMASiteManagement, WordPressPost, WordPressEvent } from "@/lib/wordpress";
 import { fallbackPrayerTimes, getTodayDate, isFriday } from "@/lib/masjidi-widget";
 import Navigation from "@/components/Navigation";
 
@@ -23,21 +23,24 @@ export default function HomePage() {
   // WordPress data state with fallback to null (hardcoded data will be used as fallback)
   const [wpData, setWpData] = useState<MHMASiteManagement | null>(null);
   const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
+  const [wpEvents, setWpEvents] = useState<WordPressEvent[]>([]);
 
   // Prayer times state (using hardcoded fallback - ready for Masjidi widget)
   const [prayerTimes] = useState(fallbackPrayerTimes);
   const [prayerDate] = useState(getTodayDate());
 
-  // Fetch WordPress data on mount
+  // Fetch WordPress data on mount and when events change
   useEffect(() => {
     const loadWordPressData = async () => {
       try {
-        const [management, posts] = await Promise.all([
+        const [management, posts, events] = await Promise.all([
           fetchMHMAManagement(),
           fetchActivitiesPosts(5),
+          fetchEvents(152),
         ]);
         setWpData(management);
         setWpPosts(posts);
+        setWpEvents(events);
       } catch (error) {
         // Silently fail - hardcoded fallback will be used
         console.log("WordPress data not available, using fallback");
@@ -51,22 +54,46 @@ export default function HomePage() {
   // For now using hardcoded times that update automatically when changed in Masjidi portal
   // TODO: Add Masjidi iframe widget or API integration when API key is available
 
-  // Activities carousel images from the original (hardcoded fallback)
-  const hardcodedSlides = [
-    { id: 1, src: "https://mhma.us/wp-content/uploads/2025/04/Family-Night-May-2025.jpg", alt: "Family Night May 2025" },
-    { id: 2, src: "https://mhma.us/wp-content/uploads/2025/04/sexed-2025.jpg", alt: "Sex Education 2025" },
-    { id: 3, src: "https://mhma.us/wp-content/uploads/2025/04/ff-6b2f6b48e772070440053eaebc648aef-ff-Those-Promised-Paradise.jpg", alt: "Those Promised Paradise" },
-  ];
+  // Activities carousel - use WordPress events if available, otherwise fallback to hardcoded
+  const slides = wpEvents.length > 0
+    ? wpEvents.map(event => {
+        // Format date from YYYYMMDD to MM/DD/YYYY
+        let formattedDate = event.acf.event_date || "";
+        if (formattedDate && /^\d{8}$/.test(formattedDate)) {
+          const year = formattedDate.substring(0, 4);
+          const month = formattedDate.substring(4, 6);
+          const day = formattedDate.substring(6, 8);
+          formattedDate = `${month}/${day}/${year}`;
+        }
+        
+        // Format time from 24-hour (HH:MM or HH:MM:SS) to 12-hour (H:MMam/pm)
+        let formattedTime = event.acf.event_time || "";
+        if (formattedTime && /^\d{1,2}:\d{2}(:\d{2})?$/.test(formattedTime)) {
+          const [hours, minutes] = formattedTime.split(':');
+          const hour = parseInt(hours, 10);
+          const ampm = hour >= 12 ? 'pm' : 'am';
+          const hour12 = hour % 12 || 12;
+          formattedTime = `${hour12}:${minutes}${ampm}`;
+        }
+        
+        return {
+          id: event.id,
+          src: event.acf.event_poster || "https://mhma.us/wp-content/uploads/2024/06/MHMA-Default-Event.webp",
+          alt: event.title.rendered,
+          eventName: event.title.rendered,
+          eventDate: formattedDate,
+          eventTime: formattedTime,
+          eventLocation: event.acf.event_location || "",
+          eventDescription: event.acf.event_description || "",
+          eventRsvpLink: event.acf.event_rsvp_link || "",
+        };
+      })
+    : [
+        { id: 1, src: "https://mhma.us/wp-content/uploads/2025/04/Family-Night-May-2025.jpg", alt: "Family Night May 2025", eventName: "Family Night", eventDate: "", eventTime: "", eventLocation: "", eventDescription: "", eventRsvpLink: "" },
+        { id: 2, src: "https://mhma.us/wp-content/uploads/2025/04/sexed-2025.jpg", alt: "Sex Education 2025", eventName: "Sex Education", eventDate: "", eventTime: "", eventLocation: "", eventDescription: "", eventRsvpLink: "" },
+        { id: 3, src: "https://mhma.us/wp-content/uploads/2025/04/ff-6b2f6b48e772070440053eaebc648aef-ff-Those-Promised-Paradise.jpg", alt: "Those Promised Paradise", eventName: "Those Promised Paradise", eventDate: "", eventTime: "", eventLocation: "", eventDescription: "", eventRsvpLink: "" },
+      ];
 
-  // Use hardcoded slides for carousel
-  const slides = hardcodedSlides;
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
@@ -174,77 +201,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Activities Section with Carousel - WordPress Compatible */}
+      {/* Activities Section - Link to Events Page */}
       <section id="activities" className="py-20 bg-white" aria-label="Activities and Events">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <header className="text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <header className="mb-12">
             <h2 className="text-4xl font-bold mb-4 uppercase">Activities and Events</h2>
             <div className="w-24 h-1 bg-amber-400 mx-auto mb-6" aria-hidden="true"></div>
-            <p className="text-gray-600 mb-12 max-w-2xl mx-auto">
+            <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
               We always have activities planned for the community.
             </p>
           </header>
-
-          {/* Carousel - Accessible and WordPress Ready */}
-          <div 
-            className="relative overflow-hidden rounded-lg shadow-xl max-w-6xl mx-auto"
-            role="region"
-            aria-roledescription="carousel"
-            aria-label="Activities and Events Slider"
-            style={{ minHeight: '600px' }}
+          <a
+            href="/events"
+            className="inline-flex items-center px-12 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg rounded"
           >
-            {slides.map((slide, index) => (
-              <div
-                key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-500 flex items-center justify-center ${
-                  index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                }`}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${index + 1} of ${slides.length}: ${slide.alt}`}
-                aria-hidden={index !== currentSlide}
-              >
-                <img 
-                  src={slide.src}
-                  alt={slide.alt}
-                  className="max-w-full max-h-[600px] object-contain"
-                  loading={index === 0 ? "eager" : "lazy"}
-                />
-              </div>
-            ))}
-            
-            {/* Carousel Controls */}
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-amber-500 hover:bg-amber-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors z-20"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-amber-500 hover:bg-amber-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors z-20"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="w-5 h-5" aria-hidden="true" />
-            </button>
-
-            {/* Dots Navigation */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2" role="tablist" aria-label="Slide navigation">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentSlide ? 'bg-amber-400' : 'bg-white/50'
-                  }`}
-                  role="tab"
-                  aria-selected={index === currentSlide}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          </div>
+            View All Events
+          </a>
         </div>
       </section>
 

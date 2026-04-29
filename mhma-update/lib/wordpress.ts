@@ -137,6 +137,73 @@ export async function fetchActivitiesPosts(limit: number = 10): Promise<WordPres
   return data?.posts?.nodes || [];
 }
 
+// Types for WordPress Events (pages with Event Details ACF)
+export interface WordPressEvent {
+  id: number;
+  title: { rendered: string };
+  acf: {
+    event_poster?: string;
+    event_date?: string;
+    event_time?: string;
+    event_location?: string;
+    event_rsvp_link?: string;
+    event_description?: string;
+    event_name?: string;
+  };
+}
+
+/**
+ * Fetch WordPress Events from REST API (children of homepage)
+ * Uses REST API instead of GraphQL for ACF fields
+ * Also fetches media URLs for event posters
+ */
+export async function fetchEvents(parentId: number = 152): Promise<WordPressEvent[]> {
+  try {
+    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+    // Add timestamp to bust cache
+    const timestamp = Date.now();
+    const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=${parentId}&per_page=100&_=${timestamp}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch events: ${response.status}`);
+      return [];
+    }
+
+    const events: WordPressEvent[] = await response.json();
+    
+    // Fetch media URLs for events that have numeric poster IDs
+    const eventsWithMedia = await Promise.all(
+      events.map(async (event) => {
+        if (event.acf.event_poster && typeof event.acf.event_poster === 'number') {
+          try {
+            const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${event.acf.event_poster}?_=${timestamp}`);
+            if (mediaResponse.ok) {
+              const media = await mediaResponse.json();
+              return {
+                ...event,
+                acf: {
+                  ...event.acf,
+                  event_poster: media.source_url || media.guid?.rendered || "",
+                },
+              };
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch media for event ${event.id}:`, error);
+          }
+        }
+        return event;
+      })
+    );
+    
+    return eventsWithMedia || [];
+  } catch (error) {
+    console.warn("Failed to fetch events:", error);
+    return [];
+  }
+}
+
 /**
  * Utility hook data fetcher for client components
  * This is used for client-side data fetching with fallback

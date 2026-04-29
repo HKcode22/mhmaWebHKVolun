@@ -52,6 +52,14 @@ MHMA (Mountain House Muslim Association) website is a dual-architecture applicat
   - `stat2_label`, `stat2_value` - Custom statistics
   - `stat3_label`, `stat3_value` - Custom statistics
   - `use_hardcoded_version` - Toggle to use hardcoded data instead of WordPress
+- **Custom Fields for Events:**
+  - `event_poster` - Event poster image (media ID or URL)
+  - `event_date` - Event date (YYYYMMDD format)
+  - `event_time` - Event time (24-hour format HH:MM or HH:MM:SS)
+  - `event_location` - Event location
+  - `event_rsvp_link` - RSVP URL
+  - `event_description` - Event description
+  - `event_name` - Event name (note: frontend uses page title for display consistency)
 - **Storage:** ACF fields stored in WordPress database (wp_postmeta table)
 - **Access:** Available via REST API in `acf` property of page/post objects
 
@@ -68,6 +76,7 @@ MHMA (Mountain House Muslim Association) website is a dual-architecture applicat
 POST /wp-json/jwt-auth/v1/token
 Body: { username, password }
 Response: { token, user_email, user_nicename, user_display_name }
+using test as username and 123 as password for authentication
 ```
 
 #### Programs (Pages)
@@ -93,15 +102,20 @@ Headers: Authorization: Bearer <jwt_token>
 Response: Deleted confirmation
 ```
 
-#### Events
+#### Events (Pages as children of homepage)
 ```
-GET /wp-json/wp/v2/events
-Response: Array of event objects
+GET /wp-json/wp/v2/pages?parent=152&per_page=100
+Response: Array of event pages (children of homepage ID 152)
 
-POST /wp-json/wp/v2/events
+POST /wp-json/wp/v2/pages
+Headers: Authorization: Bearer <jwt_token>
+Body: { title, content, parent: 152, acf: { ... } }
+Response: Created event page object
+
+POST /wp-json/wp/v2/pages/<id>
 Headers: Authorization: Bearer <jwt_token>
 Body: { title, content, acf: { ... } }
-Response: Created event object
+Response: Updated event page object
 ```
 
 #### Media (Image Uploads)
@@ -122,6 +136,21 @@ Response: Media object with source_url
 - **State Management:** React useState, useEffect
 
 ### Key Pages
+
+#### Homepage (`/app/page.tsx`)
+- **Purpose:** Main landing page with event carousel
+- **Features:**
+  - Event carousel with poster/info layout (poster right, info left)
+  - Date formatting (YYYYMMDD to MM/DD/YYYY)
+  - Time formatting (24-hour to 12-hour with am/pm)
+  - RSVP link/button
+  - Prayer times display
+  - Activities/programs section
+- **Data Flow:**
+  1. Fetches events from WordPress (children of homepage ID 152)
+  2. Resolves media IDs to URLs for event posters
+  3. Formats dates and times for display
+  4. Uses page title for event name (not event_name ACF field for consistency)
 
 #### Programs Page (`/app/programs/page.tsx`)
 - **Purpose:** Display all programs
@@ -151,11 +180,37 @@ Response: Media object with source_url
   - Protected by JWT authentication
 - **Data Flow:**
   1. Checks for JWT token in localStorage
-  2. Fetches programs and events from WordPress API
+  2. Fetches programs (children of programs parent ID 70) and events (children of homepage ID 152)
   3. Renders lists with action buttons
   4. Delete calls WordPress API with JWT token
 
-#### Dashboard Edit Page (`/app/dashboard/programs/edit/page.tsx`)
+#### Dashboard Event Create (`/app/dashboard/events/new/page.tsx`)
+- **Purpose:** Create new events
+- **Features:**
+  - Image upload via WordPress media API
+  - Date/time formatting for WordPress ACF
+  - Parent set to homepage ID 152
+- **Data Flow:**
+  1. Uploads image to WordPress media API
+  2. Gets media ID
+  3. POST to WordPress pages API with parent=152 and ACF fields
+  4. Formats date from YYYY-MM-DD to YYYYMMDD
+
+#### Dashboard Event Edit (`/app/dashboard/events/edit/page.tsx`)
+- **Purpose:** Edit existing events
+- **Features:**
+  - Fetches event data by ID
+  - Image upload with preview
+  - Updates page title and ACF fields
+  - Cache-busting for fresh data
+- **Data Flow:**
+  1. Fetches event by ID from WordPress API
+  2. Pre-fills form with WordPress data
+  3. On submit: POST to WordPress API with JWT token
+  4. Updates ACF fields, title, content
+  5. Updates event_name to match title for consistency
+
+#### Dashboard Program Edit (`/app/dashboard/programs/edit/page.tsx`)
 - **Purpose:** Edit existing program
 - **Data Flow:**
   1. Fetches program by ID from WordPress API
@@ -163,6 +218,25 @@ Response: Media object with source_url
   3. On submit: PUT request to WordPress API with JWT token
   4. Updates ACF fields, title, content
   5. Includes `use_hardcoded_version` checkbox
+
+#### Journal (`/app/journal/page.tsx`)
+- **Purpose:** Display meeting minutes (static for now)
+- **Features:**
+  - List of 14 journal entries
+  - Pagination UI
+  - Individual entry pages with full content
+  - Meeting attendees display
+- **Data Flow:**
+  1. Static data (to be made dynamic later)
+  2. Each entry has title, date, content, attendees
+  3. Markdown-style formatting for content
+
+#### Journal Entry (`/app/journal/[slug]/page.tsx`)
+- **Purpose:** Display single journal entry
+- **Features:**
+  - Full meeting minutes content
+  - Attendees section
+  - Back to journal link
 
 #### Login Page (`/app/login/page.tsx`)
 - **Purpose:** Authenticate users
@@ -244,6 +318,15 @@ This single environment variable controls all API calls from Next.js to WordPres
 
 ## Current Deployment Status
 
+### Development Environment (CURRENT)
+- **WordPress Local Path:** `/Users/hk/Local Sites/mhma-update`
+- **WordPress URL:** http://mhma-update.local
+- **WordPress Admin:** http://mhma-update.local/wp-admin
+- **Next.js URL:** http://localhost:3000
+- **Working Locally First:** Testing all features locally before production deployment
+- **Image Upload Testing:** Easier to test image uploads locally with LocalWP before Oracle Cloud
+- **Vercel Status:** Vercel account exists but not currently updating - waiting for local testing to complete
+
 ### Frontend (Next.js)
 - **Development:** Running locally on localhost:3000
 - **Production:** Can be deployed to Vercel (free), Netlify (free), or any Node.js host
@@ -251,93 +334,25 @@ This single environment variable controls all API calls from Next.js to WordPres
 - **Start:** `npm start` runs production server
 
 ### Backend (WordPress)
-- **Development:** LocalWP (http://mhma-update.local)
+- **Development:** LocalWP at `/Users/hk/Local Sites/mhma-update`
+- **URL:** http://mhma-update.local
 - **Production Target:** Oracle Cloud Free Tier (Ubuntu VM)
 - **Migration:** Export from LocalWP, import to Oracle Cloud WordPress
 
-## Hosting Requirements Analysis
+## Oracle Cloud Infrastructure (Production Target)
 
-### What We Need
-1. **WordPress Backend:** Full WordPress with MySQL, PHP
-2. **Public Access:** WordPress must be publicly accessible via REST API
-3. **Plugins:** Ability to install JWT and ACF plugins
-4. **Database:** MySQL with full access
-5. **File Uploads:** Media library for image uploads
-6. **API Access:** REST API with CORS enabled
-7. **Authentication:** JWT token generation and validation
+### Setup
+- **Platform:** Oracle Cloud Free Tier
+- **Instance:** Ubuntu VM (Always Free)
+- **WordPress:** Manual installation on Ubuntu
+- **Database:** MySQL on same VM
+- **Plugins:** JWT Authentication, ACF (same as local)
+- **Access:** Public IP with REST API accessible
 
-### What We Don't Need
-1. cPanel specifically (can use SSH/web console)
-2. FTP specifically (can use SCP/SFTP)
-3. phpMyAdmin specifically (can use command line)
-4. Unlimited bandwidth (small site, low traffic)
+### Key Points
+- Free tier (permanent, no cost)
+- Requires SSH access for setup
+- WordPress installed via command line
+- Same plugins as local environment
+- Environment variable change only needed for Next.js to connect
 
-### Hosting Options
-
-#### Option 1: Oracle Cloud Free Tier (RECOMMENDED)
-- **Cost:** $0/month (Always Free, permanent)
-- **Resources:** 2 AMD VMs, 200GB storage
-- **WordPress:** Full support
-- **Plugins:** Full support
-- **Database:** MySQL included
-- **Public Access:** Yes (public IP)
-- **Setup Complexity:** Medium (requires SSH, command line)
-- **Code Changes:** Change NEXT_PUBLIC_WORDPRESS_API_URL only
-- **Limitations:** May reclaim if idle for 7 days (preventable with ping)
-
-#### Option 2: Cheap Paid Hosting
-- **IONOS:** $1/month first year
-- **Hostinger:** ~$2-3/month long-term
-- **WordPress:** Full support with one-click install
-- **Plugins:** Full support
-- **Database:** MySQL included
-- **Public Access:** Yes
-- **Setup Complexity:** Low (cPanel, one-click)
-- **Code Changes:** Change NEXT_PUBLIC_WORDPRESS_API_URL only
-
-#### Option 3: Vercel for Frontend Only
-- **Vercel:** Free for Next.js frontend
-- **Backend:** Still need separate WordPress hosting
-- **Setup:** Deploy Next.js to Vercel, WordPress to Oracle/paid host
-- **Code Changes:** Change NEXT_PUBLIC_WORDPRESS_API_URL to production WordPress URL
-- **Benefit:** Frontend hosted globally on CDN, faster loading
-
-#### Option 4: WordPress.com (NOT RECOMMENDED)
-- **Free Plan:** Too limited (no custom plugins, no REST API access)
-- **Paid Plans:** Expensive, still has limitations
-- **Conclusion:** Does not meet requirements
-
-## Migration Strategy
-
-### From LocalWP to Oracle Cloud
-1. Create Oracle Cloud account
-2. Launch Ubuntu VM
-3. Install WordPress + MySQL
-4. Install JWT and ACF plugins
-5. Configure JWT authentication
-6. Export content from LocalWP (All-in-One WP Migration)
-7. Import to Oracle Cloud WordPress
-8. Test API endpoints
-9. Update Next.js .env.local
-10. Test Next.js connection
-11. Deploy Next.js to Vercel (optional)
-
-### Estimated Time
-- Oracle Cloud account: 10 minutes
-- VM launch: 5 minutes
-- WordPress installation: 30 minutes
-- Plugin configuration: 15 minutes
-- Content migration: 15 minutes
-- Next.js reconfiguration: 5 minutes
-- Testing: 15 minutes
-- **Total:** ~1.5-2 hours
-
-## Conclusion
-
-The MHMA project uses a headless WordPress architecture where WordPress serves as the backend CMS and data store, while Next.js serves as the frontend presentation layer. The two communicate via REST API with JWT authentication. This architecture allows for:
-- Easy content management via WordPress admin
-- Modern, fast frontend with Next.js
-- Separation of concerns (content vs presentation)
-- Scalability (can deploy frontend separately)
-
-Oracle Cloud Free Tier is the best option for hosting the WordPress backend at $0/month, with Vercel being an excellent free option for the Next.js frontend. The only code change required is updating the NEXT_PUBLIC_WORDPRESS_API_URL environment variable.

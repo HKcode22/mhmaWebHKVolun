@@ -24,6 +24,7 @@ interface Program {
     rendered: string;
   };
   slug: string;
+  parent: number;
   acf?: {
     programTitle?: string;
     programDescription?: string;
@@ -32,9 +33,13 @@ interface Program {
 
 export default function DashboardPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [events, setEvents] = useState<Program[]>([]);
+  const [journals, setJournals] = useState<Program[]>([]);
+  const [eventRequests, setEventRequests] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     // Check authentication
@@ -49,8 +54,11 @@ export default function DashboardPage() {
 
     setUser({ username: username || "Board Member", role: userRole || "board_member" });
 
-    // Fetch programs
+    // Fetch programs, events, journals, and event requests
     fetchPrograms();
+    fetchEvents();
+    fetchJournals();
+    fetchEventRequests();
   }, []);
 
   const fetchPrograms = async () => {
@@ -58,7 +66,7 @@ export default function DashboardPage() {
       const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
       const token = localStorage.getItem("jwt_token");
 
-      const response = await fetch(`${WP_API_URL}/wp/v2/pages?per_page=100&parent=0`, {
+      const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=70&per_page=100`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -77,10 +85,83 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchEvents = async () => {
+    try {
+      const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+      const token = localStorage.getItem("jwt_token");
+
+      const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=277&per_page=100`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch events");
+      }
+
+      const data = await response.json();
+      setEvents(data);
+    } catch (err) {
+      console.error("Failed to load events:", err);
+    }
+  };
+
+  const fetchJournals = async () => {
+    try {
+      const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+      const token = localStorage.getItem("jwt_token");
+
+      const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=199&per_page=100`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch journals");
+      }
+
+      const data = await response.json();
+      setJournals(data);
+    } catch (err) {
+      console.error("Failed to load journals:", err);
+    }
+  };
+
+  const fetchEventRequests = async () => {
+    try {
+      const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+      const token = localStorage.getItem("jwt_token");
+
+      // Fetch pages with status=pending (event scheduling requests)
+      const response = await fetch(`${WP_API_URL}/wp/v2/pages?status=pending&per_page=100`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch event requests");
+      }
+
+      const data = await response.json();
+      setEventRequests(data);
+    } catch (err) {
+      console.error("Failed to load event requests:", err);
+    }
+  };
+
   const handleDeleteProgram = async (programId: number, programTitle: string) => {
+    if (deletingId === programId) {
+      return; // Prevent double-click
+    }
+
     if (!confirm(`Are you sure you want to delete "${programTitle}"? This action cannot be undone.`)) {
       return;
     }
+
+    setDeletingId(programId);
 
     try {
       const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
@@ -94,7 +175,8 @@ export default function DashboardPage() {
       console.log("User role:", userRole);
       console.log("Delete URL:", `${WP_API_URL}/wp/v2/pages/${programId}?force=true`);
 
-      const response = await fetch(`${WP_API_URL}/wp/v2/pages/${programId}?force=true`, {
+      // Try force delete first
+      let response = await fetch(`${WP_API_URL}/wp/v2/pages/${programId}?force=true`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -103,12 +185,29 @@ export default function DashboardPage() {
 
       console.log("Delete response status:", response.status);
 
+      // If force delete fails with 403, try moving to trash instead
+      if (response.status === 403) {
+        console.log("Force delete failed, trying to move to trash...");
+        response = await fetch(`${WP_API_URL}/wp/v2/pages/${programId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("Trash response status:", response.status);
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Delete failed. Response:", errorText);
 
         if (response.status === 403) {
-          setError("Permission denied: Your WordPress user account doesn't have permission to delete pages. Please contact the administrator to grant you 'delete_pages' capability, or log in as an administrator in WordPress.");
+          setError("Permission denied: Your WordPress user account doesn't have permission to delete pages. Please contact the administrator to grant 'delete_pages' capability to the subscriber role in WordPress, or log in as an administrator.");
+        } else if (response.status === 404) {
+          setError("Item already deleted or not found. Refreshing list...");
+          fetchPrograms();
+          fetchEvents();
+          fetchJournals();
         } else {
           throw new Error(`Failed to delete program: ${response.status} - ${errorText}`);
         }
@@ -116,10 +215,14 @@ export default function DashboardPage() {
         console.log("Delete successful");
         // Refresh programs list
         fetchPrograms();
+        fetchEvents();
+        fetchJournals();
       }
     } catch (err) {
       console.error("Delete error:", err);
       setError(err instanceof Error ? err.message : "Failed to delete program");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -186,21 +289,21 @@ export default function DashboardPage() {
               </div>
             </Link>
             <Link
-              href="/"
+              href="/dashboard/journal/new"
               className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200"
             >
               <div className="flex items-center">
                 <BookOpen className="h-8 w-8 text-[#c9a227] mr-4" />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">View Website</h3>
-                  <p className="text-sm text-gray-600">See the public site</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Add Journal Entry</h3>
+                  <p className="text-sm text-gray-600">Create a new journal entry</p>
                 </div>
               </div>
             </Link>
           </div>
 
           {/* Programs Section */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-8">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Programs</h2>
             </div>
@@ -235,6 +338,126 @@ export default function DashboardPage() {
                             <Trash2 className="h-5 w-5" />
                           </button>
                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Events Section */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Events</h2>
+            </div>
+            <div className="p-6">
+              {events.length === 0 ? (
+                <p className="text-gray-600">No events found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {events.map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div>
+                        <h3 className="font-medium text-gray-900">{event.title.rendered}</h3>
+                        <p className="text-sm text-gray-600">Slug: {event.slug}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/dashboard/events/edit?id=${event.id}`}
+                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteProgram(event.id, event.title.rendered)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Journal Section */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Journal</h2>
+            </div>
+            <div className="p-6">
+              {journals.length === 0 ? (
+                <p className="text-gray-600">No journal entries found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {journals.map((journal) => (
+                    <div
+                      key={journal.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div>
+                        <h3 className="font-medium text-gray-900">{journal.title.rendered}</h3>
+                        <p className="text-sm text-gray-600">Slug: {journal.slug}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/dashboard/journal/edit?id=${journal.id}`}
+                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteProgram(journal.id, journal.title.rendered)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Event Scheduling Requests Section */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Event Scheduling Requests</h2>
+            </div>
+            <div className="p-6">
+              {eventRequests.length === 0 ? (
+                <p className="text-gray-600">No event scheduling requests found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {eventRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200"
+                    >
+                      <div>
+                        <h3 className="font-medium text-gray-900">{request.title.rendered}</h3>
+                        <p className="text-sm text-gray-600">Status: Pending Review</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/dashboard/events/edit?id=${request.id}`}
+                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteProgram(request.id, request.title.rendered)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
                       </div>
                     </div>
                   ))}

@@ -183,6 +183,7 @@ export default function NewProgramPage() {
           content: formData.content,
           slug: formData.slug || formData.title.toLowerCase().replace(/\s+/g, "-"),
           status: "publish",
+          parent: 70, // Programs page ID
           acf: {
             program_title: formData.programTitle,
             program_description: formData.programDescription,

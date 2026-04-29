@@ -10,6 +10,7 @@ interface ProgramData {
   title: string;
   description: string;
   content: string;
+  imageUrl: string;
   stat1Label: string;
   stat1Value: string;
   stat2Label: string;
@@ -19,6 +20,8 @@ interface ProgramData {
   stat4Label: string;
   stat4Value: string;
   additionalContent: string;
+  useHardcodedVersion?: boolean;
+  programImageId?: number;
 }
 
 export default function ArabicAcademyPage() {
@@ -50,28 +53,74 @@ export default function ArabicAcademyPage() {
         if (data && data.length > 0) {
           const page = data[0];
           setProgramId(page.id);
-          const programData = {
-            title: page.acf?.program_title || page.title?.rendered || "LEARN ARABIC LANGUAGE",
-            description: page.acf?.program_description || "",
-            content: page.content?.rendered || "",
-            stat1Label: page.acf?.stat1_label || "Students",
-            stat1Value: page.acf?.stat1_value || "25",
-            stat2Label: page.acf?.stat2_label || "Days/Week",
-            stat2Value: page.acf?.stat2_value || "5",
-            stat3Label: page.acf?.stat3_label || "",
-            stat3Value: page.acf?.stat3_value || "",
-            stat4Label: page.acf?.stat4_label || "",
-            stat4Value: page.acf?.stat4_value || "",
-            additionalContent: page.acf?.additional_content || "",
-          };
-          console.log("Program data set:", programData);
-          setProgramData(programData);
+          
+          // Check if use_hardcoded_version is set to true
+          // Handle both 'use_hardcoded_version' and empty string key
+          const useHardcoded = page.acf?.use_hardcoded_version === true || page.acf?.[''] === true;
+          
+          if (useHardcoded) {
+            console.log("Using hardcoded version for Arabic Academy");
+            setProgramData({
+              title: "LEARN ARABIC LANGUAGE",
+              description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
+              content: "",
+              imageUrl: "https://mhma.us/wp-content/uploads/2016/08/Arabic.png",
+              stat1Label: "Students",
+              stat1Value: "25",
+              stat2Label: "Days/Week",
+              stat2Value: "5",
+              stat3Label: "",
+              stat3Value: "",
+              stat4Label: "",
+              stat4Value: "",
+              additionalContent: "",
+              useHardcodedVersion: true,
+            });
+          } else {
+            // Fetch media URL if program_image is a number (media ID)
+            let imageUrl = "";
+            if (page.acf?.program_image && typeof page.acf.program_image === 'number') {
+              try {
+                const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${page.acf.program_image}`);
+                if (mediaResponse.ok) {
+                  const mediaData = await mediaResponse.json();
+                  imageUrl = mediaData.source_url || "";
+                }
+              } catch (error) {
+                console.error("Error fetching media URL:", error);
+              }
+            } else if (page.acf?.program_image && typeof page.acf.program_image === 'string') {
+              imageUrl = page.acf.program_image;
+            }
+
+            const programData = {
+              title: page.acf?.program_title || page.title?.rendered || "LEARN ARABIC LANGUAGE",
+              description: page.acf?.program_description || "",
+              content: page.content?.rendered || "",
+              imageUrl: imageUrl,
+              programImageId: page.acf?.program_image,
+              stat1Label: page.acf?.stat1_label || "Students",
+              stat1Value: page.acf?.stat1_value || "25",
+              stat2Label: page.acf?.stat2_label || "Days/Week",
+              stat2Value: page.acf?.stat2_value || "5",
+              stat3Label: page.acf?.stat3_label || "",
+              stat3Value: page.acf?.stat3_value || "",
+              stat4Label: page.acf?.stat4_label || "",
+              stat4Value: page.acf?.stat4_value || "",
+              additionalContent: page.acf?.additional_content || "",
+              useHardcodedVersion: false,
+            };
+            console.log("Program data set:", programData);
+            setProgramData(programData);
+          }
         } else {
           console.log("No page data found, using fallbacks");
           setProgramData({
             title: "LEARN ARABIC LANGUAGE",
             description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
             content: "",
+            imageUrl: "",
+            programImageId: undefined,
             stat1Label: "Students",
             stat1Value: "25",
             stat2Label: "Days/Week",
@@ -81,6 +130,7 @@ export default function ArabicAcademyPage() {
             stat4Label: "",
             stat4Value: "",
             additionalContent: "",
+            useHardcodedVersion: false,
           });
         }
       } catch (error) {
@@ -89,6 +139,8 @@ export default function ArabicAcademyPage() {
           title: "LEARN ARABIC LANGUAGE",
           description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
           content: "",
+          imageUrl: "",
+          programImageId: undefined,
           stat1Label: "Students",
           stat1Value: "25",
           stat2Label: "Days/Week",
@@ -98,6 +150,7 @@ export default function ArabicAcademyPage() {
           stat4Label: "",
           stat4Value: "",
           additionalContent: "",
+          useHardcodedVersion: false,
         });
       }
       setLoading(false);
@@ -119,6 +172,17 @@ export default function ArabicAcademyPage() {
           <section className="py-0">
             <div className="flex flex-col lg:flex-row">
               <div className="w-full lg:w-2/3 py-16 px-6 md:px-12 lg:px-16">
+                {programData?.imageUrl && (
+                  <div className="mb-8">
+                    <Image
+                      src={programData.imageUrl}
+                      alt={programData.title}
+                      width={800}
+                      height={400}
+                      className="w-full h-auto rounded-lg"
+                    />
+                  </div>
+                )}
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800 uppercase mb-6">
                   {programData?.title || "LEARN ARABIC LANGUAGE"}
                 </h1>
