@@ -17,6 +17,21 @@ export default function NewJournalEntryPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Helper function to convert YYYY-MM-DD to ACF format (F j, Y) - WITHOUT timezone issues
+  const formatDateForACF = (dateString: string) => {
+    if (!dateString) return "";
+    // Parse YYYY-MM-DD format manually to avoid timezone conversion
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return dateString;
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    return `${monthNames[month - 1]} ${day}, ${year}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,6 +41,34 @@ export default function NewJournalEntryPage() {
       const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
       const token = localStorage.getItem("jwt_token");
 
+      const formattedDatePublished = formatDateForACF(formData.datePublished);
+      const formattedDateHeldOn = formatDateForACF(formData.dateHeldOn);
+
+      const payload = {
+        title: formData.title,
+        content: formData.content,
+        status: "publish",
+        parent: 199, // Journal page ID
+        acf: {
+          journal_title: formData.title,
+          date_published: formattedDatePublished,
+          date_held_on: formattedDateHeldOn,
+          attendees: formData.attendees,
+          content: formData.content,
+        },
+        meta: {
+          journal_title: formData.title,
+          date_published: formattedDatePublished,
+          date_held_on: formattedDateHeldOn,
+          attendees: formData.attendees,
+          journal_content: formData.content,
+        },
+      };
+
+      console.log("Creating journal entry with payload:", payload);
+      console.log("date_published value:", formData.datePublished);
+      console.log("date_held_on value:", formData.dateHeldOn);
+
       // Create the journal page
       const response = await fetch(`${WP_API_URL}/wp/v2/pages`, {
         method: "POST",
@@ -33,28 +76,17 @@ export default function NewJournalEntryPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: formData.title,
-          content: formData.content,
-          status: "publish",
-          parent: 199, // Journal page ID
-          acf: {
-            journal_title: formData.title,
-            date_published: formData.datePublished,
-            date_held_on: formData.dateHeldOn,
-            attendees: formData.attendees,
-            content: formData.content,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Error response:", errorText);
         throw new Error(`Failed to create journal entry: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("Journal entry created:", data);
+      console.log("Journal entry created successfully:", data);
 
       // Redirect to dashboard
       router.push("/dashboard");
@@ -123,7 +155,11 @@ export default function NewJournalEntryPage() {
                     value={formData.datePublished}
                     onChange={(e) => setFormData({ ...formData, datePublished: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#c9a227] focus:border-transparent"
+                    placeholder="Select date"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: April 30, 2026 (will be displayed as such)
+                  </p>
                 </div>
 
                 {/* Date Held On */}
@@ -138,7 +174,11 @@ export default function NewJournalEntryPage() {
                     value={formData.dateHeldOn}
                     onChange={(e) => setFormData({ ...formData, dateHeldOn: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#c9a227] focus:border-transparent"
+                    placeholder="Select date"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: April 30, 2026 (will be displayed as such)
+                  </p>
                 </div>
 
                 {/* Attendees */}

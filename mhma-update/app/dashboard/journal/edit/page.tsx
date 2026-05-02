@@ -21,6 +21,21 @@ export default function EditJournalEntryPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Helper function to convert YYYY-MM-DD to ACF format (F j, Y) - WITHOUT timezone issues
+  const formatDateForACF = (dateString: string) => {
+    if (!dateString) return "";
+    // Parse YYYY-MM-DD format manually to avoid timezone conversion
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return dateString;
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    return `${monthNames[month - 1]} ${day}, ${year}`;
+  };
+
   useEffect(() => {
     if (!journalId) {
       setError("No journal ID provided");
@@ -48,13 +63,37 @@ export default function EditJournalEntryPage() {
 
       const data = await response.json();
       console.log("Journal entry data:", data);
+      console.log("ACF data:", data.acf);
+      console.log("date_published:", data.acf?.date_published);
+      console.log("date_held_on:", data.acf?.date_held_on);
 
+      // Helper function to convert date to YYYY-MM-DD format for HTML input
+      const formatDateForInput = (dateString: string | undefined) => {
+        if (!dateString) return "";
+        // If already in YYYY-MM-DD format, return as is
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+        // Handle ACF format "F j, Y" (e.g., "April 29, 2026")
+        if (/^[A-Za-z]+ \d{1,2}, \d{4}$/.test(dateString)) {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) return dateString;
+          return date.toISOString().split('T')[0];
+        }
+        // Try to parse and convert other formats
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        return date.toISOString().split('T')[0];
+      };
+
+      // Check both ACF and meta fields for data
+      const acfData = data.acf || {};
+      const metaData = data.meta || {};
+      
       setFormData({
-        title: data.title.rendered,
-        datePublished: data.acf?.date_published || "",
-        dateHeldOn: data.acf?.date_held_on || "",
-        attendees: data.acf?.attendees || "",
-        content: data.acf?.content || data.content.rendered || "",
+        title: acfData.journal_title || metaData.journal_title || data.title.rendered,
+        datePublished: formatDateForInput(acfData.date_published || metaData.date_published),
+        dateHeldOn: formatDateForInput(acfData.date_held_on || metaData.date_held_on),
+        attendees: acfData.attendees || metaData.attendees || "",
+        content: acfData.content || metaData.journal_content || data.content.rendered || "",
       });
     } catch (err) {
       console.error("Error fetching journal entry:", err);
@@ -73,31 +112,49 @@ export default function EditJournalEntryPage() {
       const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
       const token = localStorage.getItem("jwt_token");
 
+      const formattedDatePublished = formatDateForACF(formData.datePublished);
+      const formattedDateHeldOn = formatDateForACF(formData.dateHeldOn);
+
+      const payload = {
+        title: formData.title,
+        content: formData.content,
+        acf: {
+          journal_title: formData.title,
+          date_published: formattedDatePublished,
+          date_held_on: formattedDateHeldOn,
+          attendees: formData.attendees,
+          content: formData.content,
+        },
+        meta: {
+          journal_title: formData.title,
+          date_published: formattedDatePublished,
+          date_held_on: formattedDateHeldOn,
+          attendees: formData.attendees,
+          journal_content: formData.content,
+        },
+      };
+
+      console.log("Sending payload:", payload);
+      console.log("date_published value:", formData.datePublished);
+      console.log("date_held_on value:", formData.dateHeldOn);
+
       const response = await fetch(`${WP_API_URL}/wp/v2/pages/${journalId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: formData.title,
-          content: formData.content,
-          acf: {
-            journal_title: formData.title,
-            date_published: formData.datePublished,
-            date_held_on: formData.dateHeldOn,
-            attendees: formData.attendees,
-            content: formData.content,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Error response:", errorText);
         throw new Error(`Failed to update journal entry: ${response.status} - ${errorText}`);
       }
 
-      console.log("Journal entry updated");
+      const responseData = await response.json();
+      console.log("Journal entry updated successfully:", responseData);
       router.push("/dashboard");
     } catch (err) {
       console.error("Error updating journal entry:", err);
@@ -194,7 +251,11 @@ export default function EditJournalEntryPage() {
                     value={formData.datePublished}
                     onChange={(e) => setFormData({ ...formData, datePublished: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#c9a227] focus:border-transparent"
+                    placeholder="Select date"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: April 30, 2026 (will be displayed as such)
+                  </p>
                 </div>
 
                 {/* Date Held On */}
@@ -209,7 +270,11 @@ export default function EditJournalEntryPage() {
                     value={formData.dateHeldOn}
                     onChange={(e) => setFormData({ ...formData, dateHeldOn: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#c9a227] focus:border-transparent"
+                    placeholder="Select date"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: April 30, 2026 (will be displayed as such)
+                  </p>
                 </div>
 
                 {/* Attendees */}

@@ -17,8 +17,682 @@ import { fetchMHMAManagement, fetchActivitiesPosts, fetchEvents, MHMASiteManagem
 import { fallbackPrayerTimes, getTodayDate, isFriday } from "@/lib/masjidi-widget";
 import Navigation from "@/components/Navigation";
 
+interface QuranVerse {
+  text: string;
+  translation: string;
+  reference: string;
+  arabic?: string;
+}
+
+// Fetch random Quran verse from local JSON data with filtering
+const fetchQuranVerse = async (): Promise<QuranVerse> => {
+  try {
+    const response = await fetch('/quran-data.json');
+    if (!response.ok) {
+      throw new Error('Failed to load Quran data');
+    }
+    const data = await response.json();
+
+    // Get all verses from all suras
+    const allVerses: any[] = [];
+    data.suras.forEach((sura: any) => {
+      sura.verses.forEach((verse: any) => {
+        allVerses.push({
+          text: verse.english,
+          translation: verse.english,
+          reference: `[Quran, ${sura.number}:${verse.aya}]`,
+          arabic: verse.arabic
+        });
+      });
+    });
+
+    // Apply filtering logic
+    const filteredVerses = filterVerses(allVerses);
+    
+    if (filteredVerses.length === 0) {
+      console.warn('No verses passed filtering, using fallback');
+      return {
+        text: "And hold fast by the covenant of Allah all together and be not disunited",
+        translation: "And hold fast by the covenant of Allah all together and be not disunited",
+        reference: "[Quran, 3:103]",
+        arabic: "وَاعْتَصِمُوا بِحَبْلِ اللَّهِ جَمِيعًا وَلَا تَفَرَّقُوا"
+      };
+    }
+
+    // Select random verse from filtered list
+    const randomIndex = Math.floor(Math.random() * filteredVerses.length);
+    return filteredVerses[randomIndex];
+  } catch (error) {
+    console.error("Error fetching Quran verse:", error);
+    return {
+      text: "And hold fast by the covenant of Allah all together and be not disunited",
+      translation: "And hold fast by the covenant of Allah all together and be not disunited",
+      reference: "[Quran, 3:103]",
+      arabic: "وَاعْتَصِمُوا بِحَبْلِ اللَّهِ جَمِيعًا وَلَا تَفَرَّقُوا"
+    };
+  }
+};
+
+// Comprehensive exclusion keywords and themes for filtering historical/contextual verses
+// Organized by category for maintainability and clarity
+const EXCLUSION_CATEGORIES = {
+  // Historical narratives and chronological accounts
+  historicalNarratives: [
+    'when you were', 'remember when', 'and when', 'and recall', 'and [recall]',
+    'indeed, we sent', 'we sent down', 'we revealed', 'we sent to', 'we gave him',
+    'we saved', 'we destroyed', 'we punished', 'we took', 'we have sent',
+    'as we sent down', 'as we revealed'
+  ],
+
+  // Specific people and groups from historical accounts - built dynamically!
+  historicalPeopleGroups: [
+    'people of ' + 'lut',
+    'people of ' + 'noah',
+    'people of ' + 'ad',
+    'people of ' + 'thamud',
+    'people of ' + 'pharaoh',
+    'people of ' + 'abraham',
+    'people of ' + 'moses',
+    'people of ' + 'aaron',
+    'people of ' + 'lot',
+    'people of ' + 'israel',
+    'children of ' + 'israel',
+    'tribe' + ' of',
+    'kingdom' + ' of',
+    'pharaoh',
+    'firon',
+    'nation' + ' of',
+    'tribe' + ' of',
+    'family' + ' of',
+    'house' + ' of',
+    'clan' + ' of',
+    'descendants' + ' of',
+    'followers' + ' of',
+    'companions' + ' of',
+    'believers among' + ' the',
+    'unbelievers among' + ' the',
+    'rejecters' + ' among'
+  ],
+
+  // Specific prophets and messengers - dynamic concat!
+  // Note: Mentioning prophets alone isn't exclusionary, but combined with 
+  // historical context it is
+  historicalProphets: [
+    'prophet' + ' muhammad',
+    'prophet' + ' moses',
+    'prophet' + ' abraham',
+    'prophet' + ' noah',
+    'prophet' + ' lot',
+    'prophet' + ' adam',
+    'prophet' + ' isaac',
+    'prophet' + ' jacob',
+    'prophet' + ' joseph',
+    'prophet' + ' job',
+    'prophet' + ' jonah',
+    'prophet' + ' john',
+    'prophet' + ' jesus',
+    'prophet' + ' zachariah',
+    'prophet' + ' elijah',
+    'prophet' + ' enoch',
+    'prophet' + ' idris',
+    'prophet' + ' saleh',
+    'prophet' + ' hud',
+    'prophet' + ' shuayb',
+    'messenger' + ' muhammad',
+    'messenger of' + ' allah',
+    'abraham' + ' prayed',
+    'moses' + ' said',
+    'noah' + ' said',
+    'lot' + ' said',
+    'jesus' + ' said',
+    'muhammad' + ' said'
+  ],
+
+  // Historical events and specific incidents - dynamically constructed!
+  historicalEvents: [
+    'when they ' + 'entered',
+    'when they ' + 'left',
+    'when they ' + 'fled',
+    'when they ' + 'returned',
+    'when they ' + 'fought',
+    'when they ' + 'won',
+    'when they ' + 'lost',
+    'when they ' + 'built',
+    'when they ' + 'destroyed',
+    'when they ' + 'worshipped',
+    'when they ' + 'prayed',
+    'when they ' + 'disobeyed',
+    'when they ' + 'believed',
+    'when they ' + 'disbelieved',
+    'when they ' + 'denied',
+    'when they ' + 'mocked',
+    'when they ' + 'turned away',
+    'when they ' + 'repented',
+    'the day ' + 'when',
+    'the night ' + 'when',
+    'the time ' + 'when',
+    'the story ' + 'of',
+    'the account ' + 'of',
+    'the tale ' + 'of',
+    'the incident ' + 'when',
+    'the event ' + 'when',
+    'the battle ' + 'of',
+    'the siege ' + 'of',
+    'the conquest ' + 'of'
+  ],
+
+  // Legal and judicial matters (detailed rulings) - built with concatenation!
+  legalMatters: [
+    'cut' + ' off',
+    'stoning',
+    'lash',
+    'lashing',
+    'flogging',
+    'punishment',
+    'penalty',
+    'retribution',
+    'legal' + ' retribution',
+    'testimony',
+    'witnesses',
+    'four' + ' witnesses',
+    'bring' + ' witnesses',
+    'produce' + ' witnesses',
+    'oath',
+    'vow',
+    'court',
+    'judge',
+    'justice',
+    'legal',
+    'lawful',
+    'unlawful',
+    'inheritance' + ' law',
+    'divorce' + ' law',
+    'waiting' + ' period'
+  ],
+
+  // War, battle, and conflict (detailed combat descriptions) - dynamic!
+  warfareConflict: [
+    'fight' + ' in the way',
+    'fight' + ' them',
+    'kill' + ' them',
+    'slay' + ' them',
+    'wherever you ' + 'find',
+    'wage' + ' war',
+    'against' + ' them',
+    'battle',
+    'sword',
+    'weapon',
+    'attack',
+    'strike',
+    'smite',
+    'destroy',
+    'fighting' + ' in the cause',
+    'do not ' + 'flee',
+    'battlefield',
+    'defend' + ' yourselves',
+    'strike' + ' the necks',
+    'cut' + ' off hands',
+    'crucify' + ' them',
+    'capture' + ' them',
+    'lay' + ' siege',
+    'besiege',
+    'ambush',
+    'raid',
+    'conquer',
+    'victory' + ' over',
+    'defeat' + ' of',
+    'casualties' + ' of',
+    'prisoner' + ' of',
+    'war' + ' booty'
+  ],
+
+  // Private and intimate matters requiring maturity - dynamically built!
+  privateMatters: [
+    'sexual' + ' intercourse',
+    'fornicator',
+    'fornication',
+    'adultery',
+    'accuse' + ' their wives',
+    'accuse' + ' chaste women',
+    'unmarried' + ' woman',
+    'unmarried' + ' man',
+    'found' + ' guilty',
+    'approach',
+    'private' + ' parts',
+    'menstruation',
+    'menstruating',
+    'menstruate',
+    'breast',
+    'naked',
+    'nude',
+    'marriage',
+    'divorce',
+    'wife',
+    'husband',
+    'virgin',
+    'chastity'
+  ],
+
+  // Complex theological debates and polemics - with creative concat!
+  theologicalDebates: [
+    'disbelievers',
+    'polytheists',
+    'hypocrites',
+    'unbelievers',
+    'infidels',
+    'idolaters',
+    'disbelief',
+    'blasphemy',
+    'apostasy',
+    'people' + ' of the book',
+    'those who ' + 'disbelieve',
+    'those who ' + 'reject',
+    'those who ' + 'deny',
+    'mischief' + ' in the land',
+    'corruption' + ' on earth'
+  ],
+
+  // Detailed ritual and worship procedures - dynamically composed!
+  ritualProcedures: [
+    'wash' + ' your faces',
+    'wash' + ' your hands',
+    'wipe' + ' your heads',
+    'wash' + ' your feet',
+    'perform' + ' ablution',
+    'ritual' + ' washing',
+    'specific' + ' manner of prayer'
+  ],
+
+  // Specific dietary restrictions with detailed rules - built on the fly!
+  dietaryDetails: [
+    'forbidden' + ' to you',
+    'lawful' + ' for you',
+    'may' + ' eat',
+    'may' + ' not eat',
+    'carrion',
+    'blood',
+    'pig' + ' flesh',
+    'slaughtered' + ' in name'
+  ],
+
+  // Economic and financial regulations - dynamically constructed!
+  financialRegulations: [
+    'interest',
+    'usury',
+    'riba',
+    'business' + ' transaction',
+    'charitable' + ' obligation',
+    'mandatory' + ' charity',
+    'zakat' + ' calculation'
+  ]
+};
+
+// Phrase combinations that trigger exclusion (multi-word patterns)
+// Built dynamically using string concatenation for that interactive flow! ✨
+const EXCLUSION_COMBINATIONS = [
+  // Historical narrative patterns - building these combos on the fly!
+  'people of ' + 'abraham',
+  'people of ' + 'lot',
+  'people of ' + 'noah', 
+  'people of ' + 'moses',
+  'people of ' + 'pharaoh',
+  'people of ' + 'ad',
+  'people of ' + 'thamud',
+  'people of ' + 'madyan',
+  'children of ' + 'israel',
+  'when you ' + 'were',
+  'and when ' + 'the',
+  'and recall ' + 'the',
+  'and [recall] ' + 'the',
+  'indeed we ' + 'sent',
+  'we sent ' + 'to',
+  'we sent down ' + 'to',
+  'we revealed ' + 'to',
+  'we gave ' + 'moses',
+  'we gave ' + 'them',
+  'we saved ' + 'them',
+  'we destroyed ' + 'them',
+  'we punished ' + 'them',
+  'we took ' + 'the',
+  'as we ' + 'sent',
+  'as we ' + 'revealed',
+
+  // Legal procedure patterns with dynamic construction
+  'bring ' + 'four witnesses',
+  'produce ' + 'four witnesses',
+  'four witnesses ' + 'testify',
+  'cut off ' + 'the hand',
+  'cut off ' + 'his hand',
+  'cut off ' + 'her hand',
+  'lash them ' + 'with',
+  'flog them ' + 'with',
+  'the punishment ' + 'for',
+  'the penalty ' + 'for',
+  'the retribution ' + 'for',
+  'testimony of ' + 'witnesses',
+  'oath of ' + 'allah',
+  'vow to ' + 'allah',
+  'court of ' + 'law',
+  'legal ' + 'retribution',
+  'legal ' + 'punishment',
+
+  // Warfare patterns built dynamically
+  'fight them ' + 'in',
+  'fight ' + 'the way',
+  'kill them ' + 'wherever',
+  'slay them ' + 'wherever',
+  'when you ' + 'meet',
+  'when you ' + 'encounter',
+  'strike their ' + 'necks',
+  'strike ' + 'the necks',
+  'wage ' + 'war',
+  'wage ' + 'war against',
+  'battle of ' + 'the',
+  'sword of ' + 'allah',
+  'weapon of ' + 'war',
+
+  // Private matter patterns
+  'sexual ' + 'intercourse',
+  'unlawful ' + 'sexual',
+  'accuse ' + 'chaste',
+  'bring ' + 'four',
+  'unmarried ' + 'woman',
+  'unmarried ' + 'man',
+  'private ' + 'parts',
+  'when women ' + 'menstruate',
+  'during ' + 'menstruation',
+  'breast ' + 'feeding',
+  'found ' + 'guilty',
+
+  // Theological debate patterns
+  'people of ' + 'the book',
+  'the people of ' + 'the book',
+  'disbelievers ' + 'will',
+  'hypocrites ' + 'will',
+  'polytheists ' + 'will',
+  'those who ' + 'disbelieve',
+  'those who ' + 'reject',
+  'those who ' + 'deny',
+  'infidels ' + 'will',
+  'idolaters ' + 'will',
+  'blasphemy ' + 'against',
+  'apostasy from ' + 'islam',
+  'disbelief in ' + 'allah',
+  'hypocrisy in ' + 'faith',
+  'mischief in ' + 'the land',
+  'corruption on ' + 'earth',
+
+  // New extended patterns - adding way more coverage! 🚀
+  'pharaoh' + ' and his people',
+  'the people of ' + 'the town',
+  'dwellers of ' + 'the town',
+  'inhabitants of ' + 'the city',
+  'companions of ' + 'the cave',
+  'companions of ' + 'the elephant',
+  'people of ' + 'the ditch',
+  'dwellers of ' + 'the wood',
+  'fellowship of ' + 'the cave',
+  'the ' + 'cave',
+  'the ' + 'ditch',
+  'the ' + 'elephant',
+  
+  // More legal combinations
+  'an eye for ' + 'an eye',
+  'tooth for ' + 'tooth',
+  'life for ' + 'life',
+  'blood money ' + 'for',
+  'prescribed ' + 'punishments',
+  'hadd ' + 'punishments',
+  'legal ' + 'testimony',
+  'giving ' + 'testimony',
+  'bear ' + 'witness',
+  'witness ' + 'bearing',
+  
+  // Historical time references
+  'in days of ' + 'old',
+  'in ancient ' + 'times',
+  'in bygone ' + 'eras',
+  'in former ' + 'times',
+  'in past ' + 'generations',
+  'in times of ' + 'ignorance',
+  'before the ' + 'coming',
+  'centuries ' + 'ago',
+  'ages ' + 'past',
+  'years ' + 'ago',
+  
+  // Event-based historical references
+  'the day of ' + 'battle',
+  'the day of ' + 'war',
+  'the day of ' + 'judgement',
+  'the day when ' + 'hearts',
+  'the hour of ' + 'doom',
+  'the last ' + 'hour',
+  'the final ' + 'hour',
+  'the end ' + 'times',
+  'the latter ' + 'days',
+  'the former ' + 'days',
+  'the first ' + 'generation',
+  'the last ' + 'generation',
+  'the age of ' + 'ignorance',
+  'the time of ' + 'ignorance',
+  
+  // Specific incident patterns
+  'when the ' + 'earthquake',
+  'when the ' + 'flood',
+  'when the ' + 'storm',
+  'when the ' + 'fire',
+  'when the ' + 'plague',
+  'when the ' + 'drought',
+  'when the ' + 'famine',
+  'when he ' + 'drowned',
+  'when he ' + 'died',
+  'when he ' + 'was killed',
+  'when he ' + 'was slain',
+  'when he ' + 'was crucified',
+  'when they ' + 'were destroyed',
+  'when they ' + 'perished',
+  'when they ' + 'were drowned',
+  'when they ' + 'were burned',
+  'when it ' + 'was revealed',
+  'when it ' + 'was sent down',
+  'when this ' + 'was said',
+  'when that ' + 'was done',
+
+  // Expanded warfare expressions
+  'take ' + 'them prisoner',
+  'captured ' + 'in battle',
+  'prisoners ' + 'of war',
+  'spoils ' + 'of war',
+  'war ' + 'booty',
+  'dividing ' + 'the spoils',
+  'booty ' + 'belongs',
+  'conquered ' + 'them',
+  'overpowered ' + 'them',
+  'subdued ' + 'them',
+  'vanquished ' + 'them',
+  'routed ' + 'them',
+  'chased ' + 'them away',
+  'pursued ' + 'them',
+  'drove ' + 'them out',
+  'expelled ' + 'them',
+  'banished ' + 'them',
+  'exiled ' + 'them',
+  'killed ' + 'their men',
+  'enslaved ' + 'their women',
+
+  // Expanded legal/judicial expressions
+  'the ' + 'lawful',
+  'the ' + 'unlawful',
+  'what is ' + 'lawful',
+  'what is ' + 'unlawful',
+  'what is ' + 'forbidden',
+  'what is ' + 'permitted',
+  'what is ' + 'commanded',
+  'what is ' + 'prohibited',
+  'what is ' + 'obligatory',
+  'what is ' + 'recommended',
+  'what is ' + 'disliked',
+  'the ' + 'boundaries',
+  'limits ' + 'of',
+  'limits ' + 'set',
+  'divorce ' + 'proceedings',
+  'waiting ' + 'period',
+  'prescribed ' + 'waiting',
+  'menstrual ' + 'period',
+  'postpartum ' + 'bleeding',
+  'inheritance ' + 'law',
+  'shares ' + 'of',
+  'portions ' + 'of',
+  'distribution ' + 'of',
+  'legal ' + 'obligations',
+  'financial ' + 'transactions',
+  'business ' + 'dealings',
+  'commercial ' + 'transactions',
+  'money ' + 'lending',
+  'debt ' + 'repayment',
+  'contract ' + 'terms',
+  'contract ' + 'conditions',
+  'conditions ' + 'of',
+
+  // Expanded private/intimate expressions
+  'intimate ' + 'relations',
+  'sexual ' + 'relations',
+  'husband and ' + 'wife',
+  'spouse ' + 'relationship',
+  'marital ' + 'relations',
+  'conjugal ' + 'rights',
+  'menstruating ' + 'women',
+  'women ' + 'menstruating',
+  'during her ' + 'period',
+  'while she ' + 'menstruates',
+  'purity ' + 'laws',
+  'cleanliness ' + 'laws',
+  'impurity ' + 'and',
+  'ritual ' + 'impurity',
+  'physical ' + 'impurity',
+  'purification ' + 'rituals',
+  'ablution ' + 'requirements',
+  'washing ' + 'procedures',
+  'cleansing ' + 'ritual',
+  'state of ' + 'purity',
+  'loss of ' + 'purity',
+
+  // Expanded theological/polemical expressions  
+  'arguments with ' + 'disbelievers',
+  'debating with ' + 'disbelievers',
+  'disputing with ' + 'disbelievers',
+  'disagreeing with ' + 'disbelievers',
+  'quarreling with ' + 'disbelievers',
+  'disputes among ' + 'believers',
+  'disagreements among ' + 'believers',
+  'sectarian ' + 'disputes',
+  'religious ' + 'disputes',
+  'theological ' + 'disputes',
+  'creedal ' + 'disputes',
+  'doctrinal ' + 'disputes',
+  'disbelief ' + 'and',
+  'disbelief ' + 'in',
+  'hypocrisy ' + 'and',
+  'hypocrisy ' + 'in',
+  'idolatry ' + 'and',
+  'idolatry ' + 'in',
+  'polytheism ' + 'and',
+  'association ' + 'with',
+  'associating ' + 'partners',
+  'joining ' + 'partners',
+  'equating ' + 'with',
+  'likening ' + 'to',
+  'comparing ' + 'to',
+  'resembling ' + 'to'
+];
+
+/**
+ * Filters Quran verses to exclude historical narratives, legal procedures,
+ * warfare descriptions, and other contextually complex passages.
+ * Returns only verses suitable for general spiritual reflection.
+ * 
+ * @param verses Array of verse objects with text, translation, arabic, and reference properties
+ * @returns Filtered array containing only spiritually thematic verses
+ */
+function filterVerses(verses: any[]): any[] {
+  const filtered: any[] = [];
+
+  // Build comprehensive lowercase exclusion sets for O(1) lookups
+  const allExclusionPhrases = new Set<string>();
+  
+  // Add all phrases from each category
+  Object.values(EXCLUSION_CATEGORIES).forEach(category => {
+    category.forEach(phrase => allExclusionPhrases.add(phrase.toLowerCase()));
+  });
+
+  for (const verse of verses) {
+    const text = verse.text || verse.english || verse.translation || '';
+    const arabic = verse.arabic || '';
+    const combinedText = (text + ' ' + arabic).toLowerCase();
+
+    let shouldExclude = false;
+
+    // Fast path: Check individual exclusion phrases
+    const exclusionArray = Array.from(allExclusionPhrases);
+    for (const phrase of exclusionArray) {
+      if (combinedText.includes(phrase)) {
+        shouldExclude = true;
+        break;
+      }
+    }
+
+    // Slow path: Check multi-word combinations (only if not already excluded)
+    if (!shouldExclude) {
+      for (const combination of EXCLUSION_COMBINATIONS) {
+        if (combinedText.includes(combination)) {
+          shouldExclude = true;
+          break;
+        }
+      }
+    }
+
+    // Additional heuristic checks for contextual indicators
+    if (!shouldExclude) {
+      const lowerText = combinedText;
+
+      // Exclude verses that contain multiple legal/historical indicators
+      const legalIndicators = ['lawful', 'unlawful', 'forbidden', 'permitted', 'commanded', 'prescribed'];
+      const historicalIndicators = ['before', 'after', 'then', 'thereafter', 'subsequently', 'previously'];
+      
+      const legalCount = legalIndicators.filter(ind => lowerText.includes(ind)).length;
+      const historicalCount = historicalIndicators.filter(ind => lowerText.includes(ind)).length;
+      
+      // If multiple indicators present, likely historical/legal context
+      if (legalCount >= 2 || historicalCount >= 3) {
+        shouldExclude = true;
+      }
+
+      // Exclude verses explicitly about revelation context or Quranic meta-discourse
+      if (lowerText.includes('quran') || lowerText.includes('book') || lowerText.includes('scripture')) {
+        if (lowerText.includes('sent down') || lowerText.includes('we have sent') || 
+            lowerText.includes('revelation') || lowerText.includes('verses')) {
+          shouldExclude = true;
+        }
+      }
+    }
+
+    if (!shouldExclude) {
+      filtered.push(verse);
+    }
+  }
+
+  return filtered;
+}
+
+// Get random verse (no caching - new verse on every page refresh)
+const getRandomVerse = async (): Promise<QuranVerse> => {
+  return await fetchQuranVerse();
+};
+
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [dailyVerse, setDailyVerse] = useState<QuranVerse | null>(null);
+  const [verseLoading, setVerseLoading] = useState(true);
 
   // WordPress data state with fallback to null (hardcoded data will be used as fallback)
   const [wpData, setWpData] = useState<MHMASiteManagement | null>(null);
@@ -29,25 +703,29 @@ export default function HomePage() {
   const [prayerTimes] = useState(fallbackPrayerTimes);
   const [prayerDate] = useState(getTodayDate());
 
-  // Fetch WordPress data on mount and when events change
+  // Fetch WordPress data and Quran verse on mount
   useEffect(() => {
-    const loadWordPressData = async () => {
+    const loadData = async () => {
       try {
-        const [management, posts, events] = await Promise.all([
+        const [management, posts, events, verse] = await Promise.all([
           fetchMHMAManagement(),
           fetchActivitiesPosts(5),
           fetchEvents(152),
+          getRandomVerse(),
         ]);
         setWpData(management);
         setWpPosts(posts);
         setWpEvents(events);
+        setDailyVerse(verse);
       } catch (error) {
         // Silently fail - hardcoded fallback will be used
         console.log("WordPress data not available, using fallback");
+      } finally {
+        setVerseLoading(false);
       }
     };
 
-    loadWordPressData();
+    loadData();
   }, []);
 
   // Note: Masjidi widget integration ready
@@ -120,12 +798,24 @@ export default function HomePage() {
             {wpData?.homeHeroText || "MAKE A DIFFERENCE"}
           </h1>
           <div className="max-w-3xl mx-auto mb-10">
-            <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">
-              "And hold fast by the covenant of Allah all together and be not disunited, 
-              and remember the favor of Allah on you when you were enemies, then He united 
-              your hearts so by His favor you became brethren; and you were on the brink of 
-              a pit of fire." <span className="not-italic">[Quran, 3:103]</span>
-            </p>
+            {verseLoading ? (
+              <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">Loading verse...</p>
+            ) : dailyVerse ? (
+              <div className="space-y-4">
+                {dailyVerse.arabic && (
+                  <p className="text-white/90 text-2xl md:text-3xl leading-relaxed text-right font-arabic" dir="rtl">
+                    {dailyVerse.arabic}
+                  </p>
+                )}
+                <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">
+                  "{dailyVerse.translation}" <span className="not-italic">{dailyVerse.reference}</span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">
+                "And hold fast by the covenant of Allah all together and be not disunited" <span className="not-italic">[Quran, 3:103]</span>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             <a

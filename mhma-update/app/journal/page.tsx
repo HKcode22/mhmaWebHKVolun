@@ -18,6 +18,13 @@ interface JournalEntry {
     attendees?: string;
     content?: string;
   };
+  meta?: {
+    journal_title?: string;
+    date_published?: string;
+    date_held_on?: string;
+    attendees?: string;
+    journal_content?: string;
+  };
 }
 
 export default function JournalPage() {
@@ -28,7 +35,7 @@ export default function JournalPage() {
     const fetchJournalEntries = async () => {
       try {
         const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
-        const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=199&per_page=100`);
+        const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=199&per_page=100&_fields=id,title,slug,acf,meta,content`);
         if (!response.ok) {
           throw new Error("Failed to fetch journal entries");
         }
@@ -352,19 +359,45 @@ export default function JournalPage() {
   ];
 
   const wpJournalEntriesFormatted = wpJournalEntries.map(entry => {
-    const datePublished = entry.acf?.date_published;
+    // Check both ACF and meta fields for date
+    const datePublished = entry.acf?.date_published || entry.meta?.date_published;
     let formattedDate = "";
+    let rawDate = "";
+
     if (datePublished) {
-      const date = new Date(datePublished);
-      formattedDate = `Published On: ${date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+      // Handle F j, Y format (e.g., "May 19, 2026")
+      const dateMatch = datePublished.match(/([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/);
+      if (dateMatch) {
+        const [, month, day, year] = dateMatch;
+        formattedDate = `Published On: ${month} ${day}, ${year}`;
+        // Map month name to number without using Date object
+        const monthMap: Record<string, string> = {
+          'January': '01', 'February': '02', 'March': '03', 'April': '04',
+          'May': '05', 'June': '06', 'July': '07', 'August': '08',
+          'September': '09', 'October': '10', 'November': '11', 'December': '12'
+        };
+        const monthNum = monthMap[month] || '01';
+        rawDate = `${year}-${monthNum}-${String(parseInt(day)).padStart(2, '0')}`;
+      } else {
+        // Fallback to original parsing for Y-m-d format
+        const date = new Date(datePublished);
+        if (!isNaN(date.getTime())) {
+          formattedDate = `Published On: ${date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+          rawDate = datePublished;
+        }
+      }
     }
+
+    // Check both ACF and meta for title
+    const journalTitle = entry.acf?.journal_title || entry.meta?.journal_title;
+
     return {
       id: entry.id,
-      title: entry.acf?.journal_title || entry.title.rendered,
+      title: journalTitle || entry.title.rendered,
       excerpt: entry.title.rendered,
       date: formattedDate,
       slug: entry.slug,
-      rawDate: datePublished || "",
+      rawDate: rawDate || datePublished || "",
     };
   });
 
