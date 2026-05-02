@@ -302,167 +302,251 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Programs Section */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-8">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Programs</h2>
-            </div>
-            <div className="p-6">
-              {loading ? (
-                <p className="text-gray-600">Loading programs...</p>
-              ) : programs.length === 0 ? (
-                <p className="text-gray-600">No programs found.</p>
-              ) : (
-                <div className="space-y-4">
-                  {programs.map((program) => (
-                    <div
-                      key={program.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div>
-                        <h3 className="font-medium text-gray-900">{program.title.rendered}</h3>
-                        <p className="text-sm text-gray-600">Slug: {program.slug}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/dashboard/programs/edit?id=${program.id}`}
-                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
-                        >
-                          <Edit className="h-5 w-5" />
-                        </Link>
-                        {!hardcodedProgramSlugs.includes(program.slug) && (
-                          <button
-                            onClick={() => handleDeleteProgram(program.id, program.title.rendered)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+          {/* Management Grid - 2x2 Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Programs Box */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-teal-800 to-teal-700 text-white flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Programs</h2>
+                    <p className="text-xs text-white/70">{programs.length} active programs</p>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/programs/new"
+                  className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                  title="Add New Program"
+                >
+                  <Plus className="h-5 w-5" />
+                </Link>
+              </div>
+              <div className="p-4 max-h-80 overflow-y-auto">
+                {loading ? (
+                  <p className="text-gray-600 text-center py-4">Loading...</p>
+                ) : programs.length === 0 ? (
+                  <p className="text-gray-600 text-center py-4">No programs found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {programs.slice(0, 5).map((program) => (
+                      <div
+                        key={program.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-amber-50 transition-colors border border-gray-100"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-gray-900 truncate">{program.title.rendered}</h3>
+                          <p className="text-xs text-gray-500">{program.slug}</p>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <Link
+                            href={`/dashboard/programs/edit?id=${program.id}`}
+                            className="p-1.5 text-teal-600 hover:bg-teal-100 rounded-md transition-colors"
                           >
-                            <Trash2 className="h-5 w-5" />
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          {!hardcodedProgramSlugs.includes(program.slug) && (
+                            <button
+                              onClick={() => handleDeleteProgram(program.id, program.title.rendered)}
+                              className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {programs.length > 5 && (
+                      <p className="text-center text-sm text-gray-500 py-2">
+                        +{programs.length - 5} more programs
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Events Box */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-teal-800 to-teal-700 text-white flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Events</h2>
+                    <p className="text-xs text-white/70">{events.length} upcoming events</p>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/events/new"
+                  className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                  title="Add New Event"
+                >
+                  <Plus className="h-5 w-5" />
+                </Link>
+              </div>
+              <div className="p-4 max-h-80 overflow-y-auto">
+                {events.length === 0 ? (
+                  <p className="text-gray-600 text-center py-4">No events found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {events.slice(0, 5).map((event) => (
+                      <div
+                        key={event.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-amber-50 transition-colors border border-gray-100"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-gray-900 truncate">{event.title.rendered}</h3>
+                          <p className="text-xs text-gray-500">{event.slug}</p>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <Link
+                            href={`/dashboard/events/edit?id=${event.id}`}
+                            className="p-1.5 text-teal-600 hover:bg-teal-100 rounded-md transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteProgram(event.id, event.title.rendered)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                    {events.length > 5 && (
+                      <p className="text-center text-sm text-gray-500 py-2">
+                        +{events.length - 5} more events
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Events Section */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Events</h2>
-            </div>
-            <div className="p-6">
-              {events.length === 0 ? (
-                <p className="text-gray-600">No events found.</p>
-              ) : (
-                <div className="space-y-4">
-                  {events.map((event) => (
-                    <div
-                      key={event.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div>
-                        <h3 className="font-medium text-gray-900">{event.title.rendered}</h3>
-                        <p className="text-sm text-gray-600">Slug: {event.slug}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/dashboard/events/edit?id=${event.id}`}
-                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
-                        >
-                          <Edit className="h-5 w-5" />
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteProgram(event.id, event.title.rendered)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            {/* Journal Box */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-teal-800 to-teal-700 text-white flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Journal</h2>
+                    <p className="text-xs text-white/70">{journals.length} entries</p>
+                  </div>
                 </div>
-              )}
+                <Link
+                  href="/dashboard/journal/new"
+                  className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                  title="Add Journal Entry"
+                >
+                  <Plus className="h-5 w-5" />
+                </Link>
+              </div>
+              <div className="p-4 max-h-80 overflow-y-auto">
+                {journals.length === 0 ? (
+                  <p className="text-gray-600 text-center py-4">No journal entries found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {journals.slice(0, 5).map((journal) => (
+                      <div
+                        key={journal.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors border border-gray-100"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-gray-900 truncate">{journal.title.rendered}</h3>
+                          <p className="text-xs text-gray-500">{journal.slug}</p>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <Link
+                            href={`/dashboard/journal/edit?id=${journal.id}`}
+                            className="p-1.5 text-teal-600 hover:bg-teal-100 rounded-md transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteProgram(journal.id, journal.title.rendered)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {journals.length > 5 && (
+                      <p className="text-center text-sm text-gray-500 py-2">
+                        +{journals.length - 5} more entries
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Journal Section */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Journal</h2>
-            </div>
-            <div className="p-6">
-              {journals.length === 0 ? (
-                <p className="text-gray-600">No journal entries found.</p>
-              ) : (
-                <div className="space-y-4">
-                  {journals.map((journal) => (
-                    <div
-                      key={journal.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div>
-                        <h3 className="font-medium text-gray-900">{journal.title.rendered}</h3>
-                        <p className="text-sm text-gray-600">Slug: {journal.slug}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/dashboard/journal/edit?id=${journal.id}`}
-                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
-                        >
-                          <Edit className="h-5 w-5" />
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteProgram(journal.id, journal.title.rendered)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            {/* Event Scheduling Requests Box */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-teal-800 to-teal-700 text-white flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Scheduling Requests</h2>
+                    <p className="text-xs text-white/70">
+                      {eventRequests.length > 0 ? `${eventRequests.length} pending` : "No pending requests"}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Event Scheduling Requests Section */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Event Scheduling Requests</h2>
-            </div>
-            <div className="p-6">
-              {eventRequests.length === 0 ? (
-                <p className="text-gray-600">No event scheduling requests found.</p>
-              ) : (
-                <div className="space-y-4">
-                  {eventRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="flex items-center justify-between p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200"
-                    >
-                      <div>
-                        <h3 className="font-medium text-gray-900">{request.title.rendered}</h3>
-                        <p className="text-sm text-gray-600">Status: Pending Review</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/dashboard/events/edit?id=${request.id}`}
-                          className="p-2 text-[#c9a227] hover:bg-[#c9a227]/10 rounded-md transition-colors"
-                        >
-                          <Edit className="h-5 w-5" />
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteProgram(request.id, request.title.rendered)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
+              </div>
+              <div className="p-4 max-h-80 overflow-y-auto">
+                {eventRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Heart className="h-8 w-8 text-green-600" />
                     </div>
-                  ))}
-                </div>
-              )}
+                    <p className="text-gray-600">No pending requests.</p>
+                    <p className="text-sm text-gray-500">All caught up!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {eventRequests.slice(0, 5).map((request) => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-3 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors border border-teal-200"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-gray-900 truncate">{request.title.rendered}</h3>
+                          <p className="text-xs text-teal-600">Pending Review</p>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <Link
+                            href={`/dashboard/events/edit?id=${request.id}`}
+                            className="p-1.5 text-teal-600 hover:bg-teal-200 rounded-md transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteProgram(request.id, request.title.rendered)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {eventRequests.length > 5 && (
+                      <p className="text-center text-sm text-gray-500 py-2">
+                        +{eventRequests.length - 5} more requests
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

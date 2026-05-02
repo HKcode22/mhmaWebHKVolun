@@ -154,15 +154,14 @@ export interface WordPressEvent {
 
 /**
  * Fetch WordPress Events from REST API (children of homepage)
- * Uses REST API instead of GraphQL for ACF fields
+ * Uses Next.js API route proxy to avoid CORS issues
  * Also fetches media URLs for event posters
  */
-export async function fetchEvents(parentId: number = 152): Promise<WordPressEvent[]> {
+export async function fetchEvents(parentId: number = 277): Promise<WordPressEvent[]> {
   try {
-    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
-    // Add timestamp to bust cache
+    // Use Next.js API route proxy instead of direct WordPress call
     const timestamp = Date.now();
-    const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=${parentId}&per_page=100&_=${timestamp}`, {
+    const response = await fetch(`/api/events?parent=${parentId}&_=${timestamp}`, {
       cache: 'no-store',
     });
 
@@ -172,32 +171,7 @@ export async function fetchEvents(parentId: number = 152): Promise<WordPressEven
     }
 
     const events: WordPressEvent[] = await response.json();
-    
-    // Fetch media URLs for events that have numeric poster IDs
-    const eventsWithMedia = await Promise.all(
-      events.map(async (event) => {
-        if (event.acf?.event_poster && typeof event.acf.event_poster === 'number') {
-          try {
-            const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${event.acf.event_poster}?_=${timestamp}`);
-            if (mediaResponse.ok) {
-              const media = await mediaResponse.json();
-              return {
-                ...event,
-                acf: {
-                  ...event.acf,
-                  event_poster: media.source_url || media.guid?.rendered || "",
-                },
-              };
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch media for event ${event.id}:`, error);
-          }
-        }
-        return event;
-      })
-    );
-    
-    return eventsWithMedia || [];
+    return events || [];
   } catch (error) {
     console.warn("Failed to fetch events:", error);
     return [];
@@ -218,13 +192,12 @@ export interface WordPressProgram {
 
 /**
  * Fetch WordPress Programs from REST API
- * Returns up to limit programs, sorted by date (newest first)
+ * Uses Next.js API route proxy to avoid CORS issues
  */
 export async function fetchPrograms(limit: number = 6): Promise<WordPressProgram[]> {
   try {
-    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
     const timestamp = Date.now();
-    const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=70&per_page=${limit}&_=${timestamp}`, {
+    const response = await fetch(`/api/programs?_=${timestamp}`, {
       cache: 'no-store',
     });
 
@@ -234,32 +207,7 @@ export async function fetchPrograms(limit: number = 6): Promise<WordPressProgram
     }
 
     const programs: WordPressProgram[] = await response.json();
-    
-    // Fetch media URLs for programs that have numeric image IDs
-    const programsWithMedia = await Promise.all(
-      programs.map(async (program) => {
-        if (program.acf?.program_image && typeof program.acf.program_image === 'number') {
-          try {
-            const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${program.acf.program_image}?_=${timestamp}`);
-            if (mediaResponse.ok) {
-              const media = await mediaResponse.json();
-              return {
-                ...program,
-                acf: {
-                  ...program.acf,
-                  program_image: media.source_url || media.guid?.rendered || "",
-                },
-              };
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch media for program ${program.id}:`, error);
-          }
-        }
-        return program;
-      })
-    );
-    
-    return programsWithMedia || [];
+    return (programs || []).slice(0, limit);
   } catch (error) {
     console.warn("Failed to fetch programs:", error);
     return [];
@@ -286,13 +234,12 @@ export interface WordPressJournalEntry {
 
 /**
  * Fetch WordPress Journal entries from REST API
- * Returns up to limit entries, sorted by date (newest first)
+ * Uses Next.js API route proxy to avoid CORS issues
  */
 export async function fetchJournalEntries(limit: number = 3): Promise<WordPressJournalEntry[]> {
   try {
-    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
     const timestamp = Date.now();
-    const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=199&per_page=${limit}&_=${timestamp}`, {
+    const response = await fetch(`/api/journal?_=${timestamp}`, {
       cache: 'no-store',
     });
 
@@ -301,7 +248,8 @@ export async function fetchJournalEntries(limit: number = 3): Promise<WordPressJ
       return [];
     }
 
-    return await response.json();
+    const entries: WordPressJournalEntry[] = await response.json();
+    return (entries || []).slice(0, limit);
   } catch (error) {
     console.warn("Failed to fetch journal entries:", error);
     return [];

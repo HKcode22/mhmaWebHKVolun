@@ -11,6 +11,11 @@ import {
   Youtube,
   Heart,
   BookOpen,
+  ArrowRight,
+  ChevronRight,
+  Sparkles,
+  Zap,
+  Star
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 
@@ -23,97 +28,28 @@ interface Program {
   acf?: {
     program_title?: string;
     program_description?: string;
-    program_image?: string;
+    program_image?: any;
     use_hardcoded_version?: boolean;
   };
-  featured_media?: number;
 }
 
-interface HardcodedProgram {
-  title: string;
-  description: string;
-  image: string;
-  href: string;
-}
-
-const hardcodedPrograms: HardcodedProgram[] = [
-  {
-    title: "Youth Sports League",
-    description: "Healthy sports activity for the youth",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Youth-Sports-League.webp",
-    href: "/programs/youth-sports-league",
-  },
-  {
-    title: "Ladies Meetup",
-    description: "Weekly ladies get together, fun activities & food.",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Ladies-Meetup.webp",
-    href: "/programs/ladies-meetup",
-  },
-  {
-    title: "Learn 3D Printing",
-    description: "Learn how to design and print 3D objects",
-    image: "https://mhma.us/wp-content/uploads/2024/06/3D-Printing.webp",
-    href: "/programs/learn-3d-printing",
-  },
-  {
-    title: "Urdu Academy",
-    description: "Urdu Ka Safar (The Journey of Urdu)",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Urdu-Academy.webp",
-    href: "/programs/urdu-academy",
-  },
-  {
-    title: "Maktab Program",
-    description: "Quran Recitation and Islamic Studies Program",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Maktab.webp",
-    href: "/programs/maktab-program",
-  },
-  {
-    title: "Family Night",
-    description: "Bringing together the Muslim families of Mountain House.",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Family-Night.webp",
-    href: "/programs/family-night",
-  },
-  {
-    title: "Jummah And Salah",
-    description: "Jummah and Salah at the Unity Center",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Jummah.webp",
-    href: "/programs/jummah-and-salah",
-  },
-  {
-    title: "Islamic Center of Mountain House",
-    description: "We are committed to building this center of excellence.",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Islamic-Center-of-Mountain-House.webp",
-    href: "/programs/islamic-center-of-mountain-house",
-  },
-  {
-    title: "WISH",
-    description: "Weekend Islamic schooling and sports for youth",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Hifz-Program-2.webp",
-    href: "/programs/wish",
-  },
-  {
-    title: "Quran Hifz Program",
-    description: "Quran memorization for boys and girls",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Hifz-Program.webp",
-    href: "/programs/quran-hifz-program",
-  },
-  {
-    title: "Boy Scouts",
-    description: "Scouting activities for Boys and Girls",
-    image: "https://mhma.us/wp-content/uploads/2024/06/Scouts.webp",
-    href: "/programs/boy-scouts",
-  },
-  {
-    title: "Arabic Academy",
-    description: "A Fully accredited Arabic language course designed to equip students with the ability to understand the Quranic language.",
-    image: "https://mhma.us/wp-content/uploads/2016/08/Arabic.png",
-    href: "/programs/arabic-academy",
-  },
+const hardcodedPrograms = [
+  { title: "Youth Sports League", description: "Healthy sports activity for the youth", image: "https://mhma.us/wp-content/uploads/2024/06/Youth-Sports-League.webp", href: "/programs/youth-sports-league" },
+  { title: "Ladies Meetup", description: "Weekly ladies get together, fun activities & food.", image: "https://mhma.us/wp-content/uploads/2024/06/Ladies-Meetup.webp", href: "/programs/ladies-meetup" },
+  { title: "Learn 3D Printing", description: "Learn how to design and print 3D objects", image: "https://mhma.us/wp-content/uploads/2024/06/3D-Printing.webp", href: "/programs/learn-3d-printing" },
+  { title: "Urdu Academy", description: "Urdu Ka Safar (The Journey of Urdu)", image: "https://mhma.us/wp-content/uploads/2024/06/Urdu-Academy.webp", href: "/programs/urdu-academy" },
+  { title: "Maktab Program", description: "Quran Recitation and Islamic Studies Program", image: "https://mhma.us/wp-content/uploads/2024/06/Maktab.webp", href: "/programs/maktab-program" },
+  { title: "Family Night", description: "Bringing together the Muslim families of Mountain House.", image: "https://mhma.us/wp-content/uploads/2024/06/Family-Night.webp", href: "/programs/family-night" },
+  { title: "Jummah And Salah", description: "Jummah and Salah at the Unity Center", image: "https://mhma.us/wp-content/uploads/2024/06/Jummah.webp", href: "/programs/jummah-and-salah" },
+  { title: "Islamic Center of Mountain House", description: "We are committed to building this center of excellence.", image: "https://mhma.us/wp-content/uploads/2024/06/Islamic-Center-of-Mountain-House.webp", href: "/programs/islamic-center-of-mountain-house" },
+  { title: "WISH", description: "Weekend Islamic schooling and sports for youth", image: "https://mhma.us/wp-content/uploads/2024/06/Hifz-Program-2.webp", href: "/programs/wish" },
+  { title: "Quran Hifz Program", description: "Quran memorization for boys and girls", image: "https://mhma.us/wp-content/uploads/2024/06/Hifz-Program.webp", href: "/programs/quran-hifz-program" },
+  { title: "Boy Scouts", description: "Scouting activities for Boys and Girls", image: "https://mhma.us/wp-content/uploads/2024/06/Scouts.webp", href: "/programs/boy-scouts" },
+  { title: "Arabic Academy", description: "Arabic language course for Quranic understanding.", image: "https://mhma.us/wp-content/uploads/2016/08/Arabic.png", href: "/programs/arabic-academy" },
 ];
 
 export default function ProgramsPage() {
   const [wpPrograms, setWpPrograms] = useState<Program[]>([]);
-  const [programImageUrls, setProgramImageUrls] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -121,291 +57,118 @@ export default function ProgramsPage() {
       try {
         const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
         const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=70&per_page=100`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch programs");
-        }
+        if (!response.ok) throw new Error("Failed to fetch programs");
         const data = await response.json();
         setWpPrograms(data);
-
-        // Fetch media URLs for programs with integer program_image
-        const imageUrls: Record<number, string> = {};
-        for (const program of data) {
-          if (program.acf?.program_image) {
-            const programImage = program.acf.program_image;
-            if (typeof programImage === 'number') {
-              try {
-                const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${programImage}`);
-                if (mediaResponse.ok) {
-                  const mediaData = await mediaResponse.json();
-                  imageUrls[program.id] = mediaData.source_url;
-                }
-              } catch (error) {
-                console.error("Error fetching media URL for program", program.id, error);
-              }
-            }
-          }
-        }
-        setProgramImageUrls(imageUrls);
       } catch (err) {
         console.error("Failed to fetch programs:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchPrograms();
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen flex flex-col font-sans selection:bg-mhma-gold selection:text-white bg-[#FDFDFD]">
       <Navigation currentPage="programs" />
 
-      {/* Main Content */}
-      <main className="pt-20">
-        {/* Programs Header - Banner without text overlay */}
-        <section
-          className="relative h-[400px] md:h-[500px] bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://mhma.us/wp-content/uploads/2024/08/MHMA-Ultra-Wide-Banner.webp')",
-          }}
-        >
-          <div className="absolute inset-0 bg-black/40"></div>
-        </section>
+      {/* Hero Header */}
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden mhma-gradient mhma-pattern">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <div className="inline-block px-4 py-1.5 mb-6 rounded-full border border-mhma-gold/30 bg-mhma-gold/10 backdrop-blur-sm text-mhma-gold text-xs font-bold tracking-widest uppercase">
+            Faith & Education
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 font-serif uppercase tracking-tight">
+            Our <span className="text-mhma-gold italic">Programs</span>
+          </h1>
+          <p className="text-xl text-gray-200 max-w-2xl mx-auto font-light leading-relaxed">
+            Nurturing minds and souls through tradition-based learning and community engagement. 
+            Discover programs for all ages and interests.
+          </p>
+        </div>
+      </section>
 
-        {/* Programs Grid */}
-        <section className="py-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            {loading ? (
-              <div className="text-center py-12">Loading programs...</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {/* Hardcoded programs - but check if WordPress version exists and use_hardcoded_version is false */}
-                {hardcodedPrograms.map((program) => {
-                  // Check if there's a WordPress version of this program
-                  const programSlug = program.href.replace('/programs/', '');
-                  const wpVersion = wpPrograms.find(wp => wp.slug === programSlug);
-                  const useHardcoded = wpVersion?.acf?.use_hardcoded_version === true;
+      {/* Main Grid */}
+      <main className="flex-grow py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="animate-pulse bg-gray-50 rounded-3xl h-[400px] border border-gray-100"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {hardcodedPrograms.map((program) => {
+                const programSlug = program.href.replace('/programs/', '');
+                const wpVersion = wpPrograms.find(wp => wp.slug === programSlug);
+                const useHardcoded = wpVersion?.acf?.use_hardcoded_version !== false;
 
-                  // Debug logging for Arabic Academy
-                  if (programSlug === 'arabic-academy') {
-                    console.log("=== Arabic Academy Debug ===");
-                    console.log("Program slug:", programSlug);
-                    console.log("WordPress programs:", wpPrograms.map(wp => ({ id: wp.id, slug: wp.slug })));
-                    console.log("WordPress version found:", !!wpVersion);
-                    console.log("WordPress version data:", wpVersion);
-                    console.log("Use hardcoded:", useHardcoded);
-                    console.log("Program title from WordPress:", wpVersion?.acf?.program_title);
-                  }
+                const displayTitle = (wpVersion && !useHardcoded) ? (wpVersion.acf?.program_title || wpVersion.title.rendered) : program.title;
+                const displayDesc = (wpVersion && !useHardcoded) ? (wpVersion.acf?.program_description || "") : program.description;
 
-                  // Use WordPress data if available and not set to use hardcoded version
-                  if (wpVersion && !useHardcoded) {
-                    return (
-                      <Link
-                        key={program.href}
-                        href={program.href}
-                        className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
-                      >
-                        <div className="relative aspect-[16/10] overflow-hidden">
-                          <Image
-                            src={programImageUrls[wpVersion.id] || wpVersion.acf?.program_image || program.image}
-                            alt={wpVersion.acf?.program_title || program.title}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
-                              {wpVersion.acf?.program_title || program.title}
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-white">
-                          <h2 className="text-lg font-semibold text-gray-800 uppercase mb-2 group-hover:text-[#c9a227] transition-colors">
-                            {wpVersion.acf?.program_title || program.title}
-                          </h2>
-                          <div className="w-full h-px bg-gray-200 mb-3"></div>
-                          <p className="text-gray-600 text-sm line-clamp-2">
-                            {wpVersion.acf?.program_description || program.description}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  }
-
-                  // Use hardcoded version
-                  return (
-                    <Link
-                      key={program.href}
-                      href={program.href}
-                      className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
-                    >
-                      <div className="relative aspect-[16/10] overflow-hidden">
-                        <Image
-                          src={program.image}
-                          alt={program.title}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
-                            {program.title}
-                          </h3>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-white">
-                        <h2 className="text-lg font-semibold text-gray-800 uppercase mb-2 group-hover:text-[#c9a227] transition-colors">
-                          {program.title}
-                        </h2>
-                        <div className="w-full h-px bg-gray-200 mb-3"></div>
-                        <p className="text-gray-600 text-sm line-clamp-2">
-                          {program.description}
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })}
-                {/* WordPress programs (excluding those that match hardcoded programs) */}
-                {wpPrograms
-                  .filter(program => !hardcodedPrograms.some(hc => hc.href === `/programs/${program.slug}`))
-                  .map((program) => (
-                  <Link
-                    key={program.id}
-                    href={`/programs/${program.slug}`}
-                    className="group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1 relative"
+                return (
+                  <Link 
+                    key={program.href} 
+                    href={program.href}
+                    className="flex flex-col bg-white rounded-3xl shadow-sm border border-gray-100 group hover:border-mhma-gold hover:shadow-xl transition-all duration-500 overflow-hidden"
                   >
-                    <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded z-10 font-semibold">
-                      New
-                    </div>
-                    <div className="relative aspect-[16/10] overflow-hidden">
+                    <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
                       <Image
-                        src={programImageUrls[program.id] || program.acf?.program_image || "https://mhma.us/wp-content/uploads/2024/06/MHMA-Default-Program.webp"}
-                        alt={program.title.rendered}
+                        src={program.image}
+                        alt={displayTitle}
                         fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        className="object-cover group-hover:scale-110 transition-transform duration-700"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <h3 className="text-white text-xl font-bold uppercase text-center px-4 drop-shadow-lg">
-                          {program.acf?.program_title || program.title.rendered}
-                        </h3>
+                      <div className="absolute inset-0 bg-mhma-dark/20 group-hover:bg-mhma-dark/40 transition-colors"></div>
+                      <div className="absolute top-4 left-4">
+                        <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg border border-white/30 text-white">
+                          <BookOpen className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
-                    <div className="p-4 bg-white">
-                      <h2 className="text-lg font-semibold text-gray-800 uppercase mb-2 group-hover:text-[#c9a227] transition-colors">
-                        {program.acf?.program_title || program.title.rendered}
-                      </h2>
-                      <div className="w-full h-px bg-gray-200 mb-3"></div>
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {program.acf?.program_description || program.title.rendered}
-                      </p>
+                    <div className="p-6 flex flex-col flex-grow">
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 font-serif group-hover:text-mhma-gold transition-colors">{displayTitle}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed mb-6 font-light line-clamp-2">{displayDesc}</p>
+                      <div className="mt-auto flex items-center text-mhma-gold text-xs font-bold uppercase tracking-widest">
+                        Learn More <ChevronRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Together We Are Stronger Section */}
-        <section
-          className="py-24 px-4 bg-cover bg-center bg-fixed relative"
-          style={{
-            backgroundImage: "url('https://mhma.us/wp-content/uploads/2024/04/Community.png')",
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50"></div>
-          <div className="max-w-4xl mx-auto text-center relative z-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-white uppercase mb-6">
-              Together we are stronger
-            </h2>
-            <div className="w-24 h-1 bg-white/50 mx-auto mb-8"></div>
-            <p className="text-white/90 text-lg mb-10 max-w-2xl mx-auto">
-              Join us in our mission to build a vibrant Muslim community in Mountain House. Your support makes a difference.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/volunteer"
-                className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold py-3 px-8 rounded transition-colors"
-              >
-                VOLUNTEER
-              </Link>
-              <Link
-                href="/donate"
-                target="_blank"
-                className="inline-block bg-[#b49c2e] hover:bg-[#8c7622] text-white font-semibold py-3 px-8 rounded transition-colors"
-              >
-                DONATE NOW
-              </Link>
+                );
+              })}
             </div>
-          </div>
-        </section>
+          )}
+        </div>
       </main>
 
+      {/* Secondary Banner */}
+      <section className="py-24 bg-mhma-dark mhma-pattern text-white">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <Sparkles className="w-12 h-12 text-mhma-gold mx-auto mb-8" />
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 font-serif">Community Enrichment</h2>
+          <p className="text-gray-400 text-lg mb-12 font-light">
+            Don't see a program that fits your needs? We're always looking for new ideas and volunteers to lead community initiatives.
+          </p>
+          <Link href="/feedback" className="inline-flex items-center px-10 py-4 bg-mhma-gold text-white font-bold rounded-full hover:bg-amber-600 transition-all shadow-xl">
+            SUGGEST A PROGRAM <Zap className="ml-2 w-5 h-5" />
+          </Link>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="bg-[#1a1a1a] text-white py-12">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col items-center">
-            {/* Logo */}
-            <div className="mb-6">
-              <Image
-                src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp"
-                alt="MHMA Logo"
-                width={200}
-                height={45}
-                className="h-12 w-auto"
-              />
-            </div>
-
-            {/* Social Links */}
-            <div className="flex space-x-4 mb-8">
-              <a
-                href="https://www.facebook.com/mhma95391"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a227] transition-colors"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.instagram.com/mhma.ig/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a227] transition-colors"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="https://x.com/i/flow/login?redirect_after_login=%2Fmhmatweets"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a227] transition-colors"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.linkedin.com/company/mountain-house-muslim-association/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a227] transition-colors"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.youtube.com/@MHMAYouTube"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a227] transition-colors"
-              >
-                <Youtube className="w-5 h-5" />
-              </a>
-            </div>
-
-            {/* Copyright */}
-            <div className="text-center text-gray-400 text-sm">
-              <p>Copyright 2024 MHMA - Mountain House Muslim Association</p>
-            </div>
+      <footer className="bg-white py-16 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <Image src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp" alt="Logo" width={220} height={45} className="mx-auto mb-12 opacity-80" />
+          <div className="flex justify-center space-x-6 mb-12">
+             {[Facebook, Instagram, Twitter, Linkedin, Youtube].map((Icon, i) => (
+                <a key={i} href="#" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-mhma-gold hover:text-white transition-all border border-gray-100">
+                  <Icon className="w-4 h-4" />
+                </a>
+             ))}
           </div>
+          <p className="text-gray-400 text-xs tracking-widest uppercase font-medium">© 2026 Mountain House Muslim Association</p>
         </div>
       </footer>
     </div>

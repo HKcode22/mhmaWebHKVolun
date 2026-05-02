@@ -3,24 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ChevronDown,
-  Facebook,
-  Instagram,
-  Menu,
-  X,
-  Twitter,
-  Linkedin,
-  Youtube,
-  Home,
-  Landmark,
-  BookOpen,
-  Heart,
-  User,
-  LogOut,
-  Calendar,
-  BookText,
-} from "lucide-react";
+import { ChevronDown, Menu, X, User, LogOut, MapPin, Mail, Phone } from "lucide-react";
+import { fetchEvents, fetchPrograms, fetchJournalEntries } from "@/lib/wordpress";
 
 interface NavigationProps {
   currentPage?: string;
@@ -33,27 +17,15 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false);
   const [donateDropdownOpen, setDonateDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
 
   useEffect(() => {
-    // Check login state on mount and when localStorage changes
     const checkLoginState = () => {
       const token = localStorage.getItem("jwt_token");
-      const storedUsername = localStorage.getItem("username");
-      console.log("Navigation - Checking login state:", { token: !!token, username: storedUsername });
       setIsLoggedIn(!!token);
-      setUsername(storedUsername || "");
     };
-
     checkLoginState();
-
-    // Listen for storage changes (for multi-tab support)
-    const handleStorageChange = () => {
-      checkLoginState();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("storage", checkLoginState);
+    return () => window.removeEventListener("storage", checkLoginState);
   }, []);
 
   const handleLogout = () => {
@@ -61,139 +33,178 @@ export default function Navigation({ currentPage }: NavigationProps) {
     localStorage.removeItem("user_role");
     localStorage.removeItem("username");
     setIsLoggedIn(false);
-    setUsername("");
     window.location.href = "/login";
   };
 
+  const navLinkClass = (page: string) => 
+    `text-sm font-semibold tracking-wide px-3 py-2 transition-all duration-200 hover:text-amber-500`;
+
   return (
-    <nav className="bg-white shadow-sm fixed w-full z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <div className="flex-shrink-0">
-            <Link href="/" className="block">
-              <Image src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp" alt="MHMA Logo" width={180} height={40} className="h-10 w-auto" />
-            </Link>
+    <nav className="fixed w-full z-50 top-0">
+      {/* Top bar - contact info and login - GREEN */}
+      <div className="bg-teal-800 text-xs py-2">
+        <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
+          {/* Contact Info - Left Side */}
+          <div className="hidden md:flex items-center gap-4 text-white/90">
+            <a href="mailto:info@mhma.info" className="flex items-center gap-1.5 hover:text-amber-400 transition-colors">
+              <Mail className="w-3.5 h-3.5" />
+              <span>info@mhma.info</span>
+            </a>
+            <span className="text-white/30">|</span>
+            <a href="/contact#directions" className="flex items-center gap-1.5 hover:text-amber-400 transition-colors">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>250 E. Main St., Mountain House 95391</span>
+            </a>
           </div>
-          <div className="hidden lg:flex items-center space-x-8">
-            <Link href="/" className={`flex items-center transition-colors font-medium ${currentPage === "home" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-              <Home className="mr-1 h-4 w-4" /> HOME
-            </Link>
-            <div className="relative" onMouseEnter={() => setAboutDropdownOpen(true)} onMouseLeave={() => setAboutDropdownOpen(false)}>
-              <Link href="/mhmapage" className={`flex items-center transition-colors font-medium ${currentPage === "mhma" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-                <Landmark className="mr-1 h-4 w-4" /> MHMA<ChevronDown className="ml-1 h-4 w-4" />
-              </Link>
-              {aboutDropdownOpen && (
-                <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
-                  <Link href="/board" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">BOARD</Link>
-                  <Link href="/committees" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">COMMITTEES</Link>
-                  <Link href="/bylaws" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">BYLAWS</Link>
-                  <Link href="/feedback" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">FEEDBACK</Link>
-                  <Link href="/serving-our-community" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">SERVING OUR COMMUNITY</Link>
-                  <Link href="/community-commitment" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">COMMUNITY COMMITMENT</Link>
-                </div>
-              )}
-            </div>
-            <div className="relative" onMouseEnter={() => setEventsDropdownOpen(true)} onMouseLeave={() => setEventsDropdownOpen(false)}>
-              <Link href="/events" className={`flex items-center transition-colors font-medium ${currentPage === "events" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-                <Calendar className="mr-1 h-4 w-4" /> EVENTS<ChevronDown className="ml-1 h-4 w-4" />
-              </Link>
-              {eventsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
-                  <Link href="/events" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">ALL EVENTS</Link>
-                  <Link href="/event-scheduling-request" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">EVENT SCHEDULING REQUEST</Link>
-                </div>
-              )}
-            </div>
-            <Link href="/journal" className={`flex items-center transition-colors font-medium ${currentPage === "journal" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-              <BookText className="mr-1 h-4 w-4" /> JOURNAL
-            </Link>
-            <div className="relative" onMouseEnter={() => setProgramsDropdownOpen(true)} onMouseLeave={() => setProgramsDropdownOpen(false)}>
-              <Link href="/programs" className={`flex items-center transition-colors font-medium ${currentPage === "programs" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-                <BookOpen className="mr-1 h-4 w-4" /> PROGRAMS<ChevronDown className="ml-1 h-4 w-4" />
-              </Link>
-              {programsDropdownOpen && (
-                <div className="absolute top-full left-0 mt-0 w-56 bg-white shadow-lg rounded-md py-2 z-50">
-                  <Link href="/programs" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">ALL PROGRAMS</Link>
-                  <Link href="/programs/maktab-program" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">MHMA MAKTAB</Link>
-                  <Link href="/zakat" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">ZAKAT</Link>
-                </div>
-              )}
-            </div>
-            <div className="relative" onMouseEnter={() => setDonateDropdownOpen(true)} onMouseLeave={() => setDonateDropdownOpen(false)}>
-              <Link href="/donate" className={`flex items-center transition-colors font-medium ${currentPage === "donate" ? "text-[#c9a227]" : "text-gray-700 hover:text-[#c9a227]"}`}>
-                <Heart className="mr-1 h-4 w-4" /> DONATE<ChevronDown className="ml-1 h-4 w-4" />
-              </Link>
-              {donateDropdownOpen && (
-                <div className="absolute top-full left-0 mt-0 w-48 bg-white shadow-lg rounded-md py-2 z-50">
-                  <Link href="/donate" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">GENERAL DONATION</Link>
-                  <Link href="/masjid-construction" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#c9a227]">MASJID CONSTRUCTION</Link>
-                </div>
-              )}
-            </div>
+
+          {/* Login - Right Side */}
+          <div className="flex items-center gap-4 ml-auto">
             {isLoggedIn ? (
               <>
-                <Link href="/dashboard" className="text-[#c9a227] font-medium">DASHBOARD</Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center text-gray-700 hover:text-red-600 transition-colors font-medium"
-                >
-                  <LogOut className="mr-1 h-4 w-4" /> LOGOUT
-                </button>
+                <Link href="/dashboard" className="text-white hover:text-amber-400 font-medium transition-colors">DASHBOARD</Link>
+                <button onClick={handleLogout} className="text-gray-300 hover:text-red-400 transition-colors">LOGOUT</button>
               </>
             ) : (
-              <Link href="/login" className="flex items-center text-gray-700 hover:text-[#c9a227] transition-colors font-medium">
-                <User className="mr-1 h-4 w-4" /> LOGIN
+              <Link href="/login" className="text-white hover:text-amber-400 font-medium transition-colors flex items-center gap-1">
+                <User className="w-3.5 h-3.5" />
+                MEMBER LOGIN
               </Link>
             )}
           </div>
-          <div className="lg:hidden">
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-700 hover:text-[#c9a227] p-2">
+        </div>
+      </div>
+
+      {/* Main navigation - white background */}
+      <div className="bg-white shadow-md">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link href="/" className="flex-shrink-0">
+              <Image 
+                src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp" 
+                alt="MHMA Logo" 
+                width={200} 
+                height={45} 
+                className="h-11 md:h-12 w-auto"
+              />
+            </Link>
+
+            {/* Desktop nav links */}
+            <div className="hidden lg:flex items-center gap-1">
+              <Link href="/" className={`${navLinkClass("home")} ${currentPage === "home" ? "text-amber-500" : "text-gray-700"}`}>
+                HOME
+              </Link>
+
+              {/* About dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setAboutDropdownOpen(true)}
+                onMouseLeave={() => setAboutDropdownOpen(false)}
+              >
+                <Link href="/about" className={`${navLinkClass("about")} ${currentPage === "about" ? "text-amber-500" : "text-gray-700"} flex items-center gap-1`}>
+                  ABOUT<span className="text-[10px]">▼</span>
+                </Link>
+                {aboutDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white text-gray-800 shadow-xl rounded-b-lg overflow-hidden border-t-2 border-amber-400">
+                    <Link href="/about" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">ABOUT US</Link>
+                    <Link href="/board" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">BOARD</Link>
+                    <Link href="/committees" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">COMMITTEES</Link>
+                    <Link href="/bylaws" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">BYLAWS</Link>
+                    <Link href="/community-transparency" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">COMMUNITY TRANSPARENCY</Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Events dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setEventsDropdownOpen(true)}
+                onMouseLeave={() => setEventsDropdownOpen(false)}
+              >
+                <Link href="/events" className={`${navLinkClass("events")} ${currentPage === "events" ? "text-amber-500" : "text-gray-700"} flex items-center gap-1`}>
+                  EVENTS<span className="text-[10px]">▼</span>
+                </Link>
+                {eventsDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white text-gray-800 shadow-xl rounded-b-lg overflow-hidden border-t-2 border-amber-400">
+                    <Link href="/events" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">ALL EVENTS</Link>
+                    <Link href="/event-scheduling-request" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">SCHEDULING REQUEST</Link>
+                  </div>
+                )}
+              </div>
+
+              <Link href="/journal" className={`${navLinkClass("journal")} ${currentPage === "journal" ? "text-amber-500" : "text-gray-700"}`}>
+                JOURNAL
+              </Link>
+
+              {/* Programs dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setProgramsDropdownOpen(true)}
+                onMouseLeave={() => setProgramsDropdownOpen(false)}
+              >
+                <Link href="/programs" className={`${navLinkClass("programs")} ${currentPage === "programs" ? "text-amber-500" : "text-gray-700"} flex items-center gap-1`}>
+                  PROGRAMS<span className="text-[10px]">▼</span>
+                </Link>
+                {programsDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white text-gray-800 shadow-xl rounded-b-lg overflow-hidden border-t-2 border-amber-400">
+                    <Link href="/programs" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">ALL PROGRAMS</Link>
+                    <Link href="/zakat" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">ZAKAT</Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Donate dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setDonateDropdownOpen(true)}
+                onMouseLeave={() => setDonateDropdownOpen(false)}
+              >
+                <Link href="/donate" className={`${navLinkClass("donate")} ${currentPage === "donate" ? "text-amber-500" : "text-gray-700"} flex items-center gap-1`}>
+                  DONATE<span className="text-[10px]">▼</span>
+                </Link>
+                {donateDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white text-gray-800 shadow-xl rounded-b-lg overflow-hidden border-t-2 border-amber-400">
+                    <Link href="/donate" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">GENERAL DONATION</Link>
+                    <Link href="/masjid-construction" className="block px-4 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600">MASJID CONSTRUCTION</Link>
+                  </div>
+                )}
+              </div>
+
+              <Link href="/contact" className={`${navLinkClass("contact")} ${currentPage === "contact" ? "text-amber-500" : "text-gray-700"}`}>
+                CONTACT
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="lg:hidden text-gray-700 p-2"
+            >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link href="/" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
-                <Home className="mr-2 h-4 w-4" /> HOME
-              </Link>
-              <Link href="/mhmapage" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
-                <Landmark className="mr-2 h-4 w-4" /> MHMA
-              </Link>
-              <Link href="/board" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">BOARD</Link>
-              <Link href="/committees" className="block px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">COMMITTEES</Link>
-              <Link href="/#activities" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
-                <Calendar className="mr-2 h-4 w-4" /> EVENTS
-              </Link>
-              <Link href="/journal" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
-                <BookText className="mr-2 h-4 w-4" /> JOURNAL
-              </Link>
-              <Link href="/programs" className="flex items-center px-3 py-2 text-[#c9a227] font-medium">
-                <BookOpen className="mr-2 h-4 w-4" /> PROGRAMS
-              </Link>
-              <Link href="/donate" target="_blank" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
-                <Heart className="mr-2 h-4 w-4" /> DONATE
-              </Link>
-              {isLoggedIn ? (
-                <>
-                  <Link href="/dashboard" className="block px-3 py-2 text-[#c9a227] font-medium">DASHBOARD</Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center px-3 py-2 text-gray-700 hover:text-red-600 font-medium w-full text-left"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" /> LOGOUT
-                  </button>
-                </>
-              ) : (
-                <Link href="/login" className="flex items-center px-3 py-2 text-gray-700 hover:text-[#c9a227] font-medium">
-                  <User className="mr-2 h-4 w-4" /> LOGIN
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-6xl mx-auto px-4 py-4 space-y-2">
+            <Link href="/" className="block py-2 text-gray-700 font-semibold border-b border-gray-100">HOME</Link>
+            <Link href="/about" className="block py-2 text-gray-700 border-b border-gray-100">ABOUT</Link>
+            <Link href="/events" className="block py-2 text-gray-700 border-b border-gray-100">EVENTS</Link>
+            <Link href="/journal" className="block py-2 text-gray-700 border-b border-gray-100">JOURNAL</Link>
+            <Link href="/programs" className="block py-2 text-gray-700 border-b border-gray-100">PROGRAMS</Link>
+            <Link href="/donate" className="block py-2 text-gray-700 border-b border-gray-100">DONATE</Link>
+            <Link href="/contact" className="block py-2 text-gray-700">CONTACT</Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard" className="block py-2 text-amber-600 font-semibold">DASHBOARD</Link>
+            ) : (
+              <Link href="/login" className="block py-2 text-amber-600 font-semibold">MEMBER LOGIN</Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
