@@ -13,9 +13,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { fetchMHMAManagement, fetchActivitiesPosts, fetchEvents, MHMASiteManagement, WordPressPost, WordPressEvent } from "@/lib/wordpress";
+import { fetchMHMAManagement, fetchActivitiesPosts, fetchEvents, fetchPrograms, fetchJournalEntries, MHMASiteManagement, WordPressPost, WordPressEvent, WordPressProgram, WordPressJournalEntry } from "@/lib/wordpress";
 import { fallbackPrayerTimes, getTodayDate, isFriday } from "@/lib/masjidi-widget";
 import Navigation from "@/components/Navigation";
+import Link from "next/link";
 
 interface QuranVerse {
   text: string;
@@ -698,6 +699,8 @@ export default function HomePage() {
   const [wpData, setWpData] = useState<MHMASiteManagement | null>(null);
   const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
   const [wpEvents, setWpEvents] = useState<WordPressEvent[]>([]);
+  const [wpPrograms, setWpPrograms] = useState<WordPressProgram[]>([]);
+  const [wpJournalEntries, setWpJournalEntries] = useState<WordPressJournalEntry[]>([]);
 
   // Prayer times state (using hardcoded fallback - ready for Masjidi widget)
   const [prayerTimes] = useState(fallbackPrayerTimes);
@@ -707,15 +710,19 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [management, posts, events, verse] = await Promise.all([
+        const [management, posts, events, programs, journalEntries, verse] = await Promise.all([
           fetchMHMAManagement(),
           fetchActivitiesPosts(5),
           fetchEvents(152),
+          fetchPrograms(3),
+          fetchJournalEntries(3),
           getRandomVerse(),
         ]);
         setWpData(management);
         setWpPosts(posts);
         setWpEvents(events);
+        setWpPrograms(programs);
+        setWpJournalEntries(journalEntries);
         setDailyVerse(verse);
       } catch (error) {
         // Silently fail - hardcoded fallback will be used
@@ -780,60 +787,159 @@ export default function HomePage() {
     <div className="min-h-screen bg-white font-sans">
       <Navigation currentPage="home" />
 
-      {/* Hero Section - With Background Image and Dark Overlay */}
-      <section 
-        className="relative min-h-[70vh] flex items-center justify-center"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(0,0,0,0.74), rgba(0,0,0,0.74)), url(https://mhma.us/wp-content/uploads/2024/01/Brotherhood.webp)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-        }}
-      >
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-24">
-          <p className="text-white text-sm font-medium mb-4 uppercase tracking-widest">
-            Strengthening The Bond of brotherhood
-          </p>
-          <h1 className="text-white text-5xl md:text-7xl font-bold mb-8 uppercase tracking-wide">
-            {wpData?.homeHeroText || "MAKE A DIFFERENCE"}
-          </h1>
-          <div className="max-w-3xl mx-auto mb-10">
-            {verseLoading ? (
-              <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">Loading verse...</p>
-            ) : dailyVerse ? (
-              <div className="space-y-4">
-                {dailyVerse.arabic && (
-                  <p className="text-white/90 text-2xl md:text-3xl leading-relaxed text-right font-arabic" dir="rtl">
-                    {dailyVerse.arabic}
-                  </p>
-                )}
-                <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">
-                  "{dailyVerse.translation}" <span className="not-italic">{dailyVerse.reference}</span>
-                </p>
-              </div>
-            ) : (
-              <p className="text-white/90 text-lg md:text-xl leading-relaxed italic">
-                "And hold fast by the covenant of Allah all together and be not disunited" <span className="not-italic">[Quran, 3:103]</span>
-              </p>
-            )}
+      {/* Hero Section - Clean, Modern Design */}
+      <section className="relative py-20 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Bismillah */}
+          <div className="text-center mb-8">
+            <p className="text-3xl md:text-4xl text-amber-600 font-arabic mb-2" dir="rtl">
+              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+            </p>
+            <p className="text-gray-600 text-sm">
+              Est. 2010 · Mountain House, California
+            </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href="https://s.mhma.info/join"
-              className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold text-sm uppercase tracking-wider hover:bg-white hover:text-black transition-all duration-300"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Become a member
+
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+              Welcome to <span className="text-amber-600">MHMA</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-3xl mx-auto">
+              Serving the Muslim Community of Mountain House — <br className="hidden md:block" />
+              <span className="text-amber-700 font-semibold">Faith, Education & Brotherhood</span>
+            </p>
+
+            {/* Quran Verse - Larger Display */}
+            <div className="max-w-3xl mx-auto mb-12 bg-white rounded-xl shadow-lg p-8 border border-amber-100">
+              {verseLoading ? (
+                <p className="text-gray-600 text-xl">Loading verse...</p>
+              ) : dailyVerse ? (
+                <div className="space-y-6">
+                  {dailyVerse.arabic && (
+                    <p className="text-3xl md:text-4xl lg:text-5xl text-amber-800 leading-relaxed text-right font-arabic" dir="rtl">
+                      {dailyVerse.arabic}
+                    </p>
+                  )}
+                  <p className="text-xl md:text-2xl text-gray-700 italic leading-relaxed">
+                    "{dailyVerse.translation}"
+                  </p>
+                  <p className="text-amber-600 font-semibold text-lg">{dailyVerse.reference}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <p className="text-3xl md:text-4xl lg:text-5xl text-amber-800 leading-relaxed text-right font-arabic" dir="rtl">
+                    وَاعْتَصِمُوا بِحَبْلِ اللَّهِ جَمِيعًا وَلَا تَفَرَّقُوا
+                  </p>
+                  <p className="text-xl md:text-2xl text-gray-700 italic leading-relaxed">
+                    "And hold fast by the covenant of Allah all together and be not disunited"
+                  </p>
+                  <p className="text-amber-600 font-semibold text-lg">[Quran, 3:103]</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/programs"
+                className="inline-flex items-center px-8 py-4 bg-amber-500 text-white font-semibold text-lg rounded-lg hover:bg-amber-600 transition-colors shadow-lg"
+              >
+                Explore Programs
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center px-8 py-4 bg-white border-2 border-amber-500 text-amber-700 font-semibold text-lg rounded-lg hover:bg-amber-50 transition-colors shadow-lg"
+              >
+                Get Directions
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Info Cards */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Prayer Times */}
+            <Link href="/#activities" className="group bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-amber-100">
+              <div className="w-16 h-16 mx-auto mb-4 bg-amber-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Landmark className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Prayer Times</h3>
+              <p className="text-gray-600 text-sm mb-4">Daily Salah times and Iqamah schedules</p>
+              <span className="text-amber-600 font-medium group-hover:underline">View Today's Schedule →</span>
+            </Link>
+
+            {/* Programs */}
+            <Link href="/programs" className="group bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-amber-100">
+              <div className="w-16 h-16 mx-auto mb-4 bg-amber-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <BookOpen className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Programs</h3>
+              <p className="text-gray-600 text-sm mb-4">Quran, Arabic, Sunday School, Hifz, and more</p>
+              <span className="text-amber-600 font-medium group-hover:underline">Explore All Programs →</span>
+            </Link>
+
+            {/* Donate */}
+            <a href="https://donate.stripe.com/aEU3g43Or9LdaLm6oo" target="_blank" rel="noopener noreferrer" className="group bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-amber-100">
+              <div className="w-16 h-16 mx-auto mb-4 bg-amber-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Heart className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Donate</h3>
+              <p className="text-gray-600 text-sm mb-4">Support your masjid and community programs</p>
+              <span className="text-amber-600 font-medium group-hover:underline">Support Your Masjid →</span>
             </a>
-            <a
-              href="https://donate.stripe.com/aEU3g43Or9LdaLm6oo"
-              className="inline-flex items-center px-8 py-4 border-2 border-amber-400 text-amber-400 font-semibold text-sm uppercase tracking-wider hover:bg-amber-400 hover:text-black transition-all duration-300"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Make a Donation
-            </a>
+
+            {/* Contact */}
+            <Link href="/contact" className="group bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-amber-100">
+              <div className="w-16 h-16 mx-auto mb-4 bg-amber-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Contact Us</h3>
+              <p className="text-gray-600 text-sm mb-4">Mountain House, CA</p>
+              <span className="text-amber-600 font-medium group-hover:underline">Get in Touch →</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Who We Are Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">About MHMA</h2>
+            <div className="w-24 h-1 bg-amber-500 mx-auto mb-6"></div>
+            <p className="text-lg text-gray-700 leading-relaxed mb-8">
+              The Mountain House Muslim Association (MHMA) has been a cornerstone of faith and community for over 15 years. 
+              We serve the spiritual, educational, and social needs of Muslims in Mountain House and the surrounding Bay Area.
+            </p>
+            <p className="text-gray-600 mb-8">
+              Our masjid is a home for every Muslim — a center of worship, learning, and brotherhood. 
+              We welcome all and work to strengthen the bonds between our community and our neighbors.
+            </p>
+            <Link href="/mhmapage" className="inline-flex items-center px-8 py-3 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors">
+              Learn More About Us →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Statistics */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <p className="text-5xl font-bold text-amber-600 mb-2">15+</p>
+              <p className="text-gray-600 font-medium">Years Serving<br />the Community</p>
+            </div>
+            <div>
+              <p className="text-5xl font-bold text-amber-600 mb-2">500+</p>
+              <p className="text-gray-600 font-medium">Families<br />in our community</p>
+            </div>
+            <div>
+              <p className="text-5xl font-bold text-amber-600 mb-2">10+</p>
+              <p className="text-gray-600 font-medium">Weekly Programs<br />for all ages</p>
+            </div>
           </div>
         </div>
       </section>
@@ -891,195 +997,238 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Activities Section - Link to Events Page */}
-      <section id="activities" className="py-20 bg-white" aria-label="Activities and Events">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <header className="mb-12">
-            <h2 className="text-4xl font-bold mb-4 uppercase">Activities and Events</h2>
-            <div className="w-24 h-1 bg-amber-400 mx-auto mb-6" aria-hidden="true"></div>
-            <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-              We always have activities planned for the community.
+{/* Activities Section - Link to Events Page */}
+       <section id="activities" className="py-20 bg-white" aria-label="Activities and Events">
+         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+           <header className="text-center mb-12">
+             <h2 className="text-4xl font-bold mb-4 uppercase">Activities and Events</h2>
+             <div className="w-24 h-1 bg-amber-400 mx-auto mb-6" aria-hidden="true"></div>
+             <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+               We always have activities planned for the community.
+             </p>
+           </header>
+
+           {/* Event Previews - Show 3 most recent events */}
+           {wpEvents.length > 0 && (
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+               {wpEvents.slice(0, 3).map((event) => {
+                 let formattedDate = event.acf.event_date || "";
+                 if (formattedDate && /^\d{8}$/.test(formattedDate)) {
+                   const year = formattedDate.substring(0, 4);
+                   const month = formattedDate.substring(4, 6);
+                   const day = formattedDate.substring(6, 8);
+                   formattedDate = `${month}/${day}/${year}`;
+                 }
+
+                 let formattedTime = event.acf.event_time || "";
+                 if (formattedTime && /^\d{1,2}:\d{2}(:\d{2})?$/.test(formattedTime)) {
+                   const [hours, minutes] = formattedTime.split(':');
+                   const hour = parseInt(hours, 10);
+                   const ampm = hour >= 12 ? 'pm' : 'am';
+                   const hour12 = hour % 12 || 12;
+                   formattedTime = `${hour12}:${minutes}${ampm}`;
+                 }
+
+                 return (
+                   <Link
+                     key={event.id}
+                     href={`/events`}
+                     className="group block bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
+                   >
+                     <div className="relative aspect-[16/10] overflow-hidden">
+                       <img
+                         src={event.acf.event_poster || "https://mhma.us/wp-content/uploads/2024/06/MHMA-Default-Event.webp"}
+                         alt={event.title.rendered}
+                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                       />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                     </div>
+                     <div className="p-4">
+                       <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-amber-600 transition-colors line-clamp-1">
+                         {event.title.rendered}
+                       </h3>
+                       <div className="space-y-1 text-sm text-gray-600">
+                         {formattedDate && <p><span className="font-medium">Date:</span> {formattedDate}</p>}
+                         {formattedTime && <p><span className="font-medium">Time:</span> {formattedTime}</p>}
+                         {event.acf.event_location && <p><span className="font-medium">Location:</span> {event.acf.event_location}</p>}
+                       </div>
+                     </div>
+                   </Link>
+                 );
+               })}
+             </div>
+           )}
+
+           <div className="text-center">
+             <a
+               href="/events"
+               className="inline-flex items-center px-12 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg rounded"
+             >
+               View All Events
+             </a>
+           </div>
+         </div>
+       </section>
+
+       {/* Programs Preview Section */}
+       <section className="py-20 bg-gray-50">
+         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+           <header className="text-center mb-12">
+             <h2 className="text-4xl font-bold mb-4 uppercase">Our Programs</h2>
+             <div className="w-24 h-1 bg-amber-400 mx-auto mb-6" aria-hidden="true"></div>
+             <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+               Discover our community programs and activities.
+             </p>
+           </header>
+
+           {/* Program Previews - Show 3 most recent programs */}
+           {wpPrograms.length > 0 && (
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+               {wpPrograms.slice(0, 3).map((program) => (
+                 <Link
+                   key={program.id}
+                   href={`/programs/${program.slug}`}
+                   className="group block bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
+                 >
+                   <div className="relative aspect-[16/10] overflow-hidden">
+                     <img
+                       src={typeof program.acf?.program_image === 'string' ? program.acf.program_image : "https://mhma.us/wp-content/uploads/2024/06/MHMA-Default-Program.webp"}
+                       alt={program.acf?.program_title || program.title.rendered}
+                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                     />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                   </div>
+                   <div className="p-4">
+                     <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-amber-600 transition-colors line-clamp-1">
+                       {program.acf?.program_title || program.title.rendered}
+                     </h3>
+                     <p className="text-sm text-gray-600 line-clamp-2">
+                       {program.acf?.program_description || ""}
+                     </p>
+                   </div>
+                 </Link>
+               ))}
+             </div>
+           )}
+
+           <div className="text-center">
+             <a
+               href="/programs"
+               className="inline-flex items-center px-12 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg rounded"
+             >
+               View All Programs
+             </a>
+           </div>
+         </div>
+       </section>
+
+       {/* Journal Preview Section */}
+       <section className="py-20 bg-white">
+         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+           <header className="text-center mb-12">
+             <h2 className="text-4xl font-bold mb-4 uppercase">From Our Journal</h2>
+             <div className="w-24 h-1 bg-amber-400 mx-auto mb-6" aria-hidden="true"></div>
+             <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+               Read the latest updates and meeting minutes from our community.
+             </p>
+           </header>
+
+           {/* Journal Previews - Show 3 most recent entries */}
+           {wpJournalEntries.length > 0 && (
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+               {wpJournalEntries.slice(0, 3).map((entry) => {
+                 const datePublished = entry.acf?.date_published || entry.meta?.date_published;
+                 let formattedDate = "";
+                 let rawDate = "";
+
+                 if (datePublished) {
+                   const dateMatch = datePublished.match(/([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/);
+                   if (dateMatch) {
+                     const [, month, day, year] = dateMatch;
+                     formattedDate = `${month} ${day}, ${year}`;
+                     const monthMap: Record<string, string> = {
+                       'January': '01', 'February': '02', 'March': '03', 'April': '04',
+                       'May': '05', 'June': '06', 'July': '07', 'August': '08',
+                       'September': '09', 'October': '10', 'November': '11', 'December': '12'
+                     };
+                     const monthNum = monthMap[month] || '01';
+                     rawDate = `${year}-${monthNum}-${String(parseInt(day)).padStart(2, '0')}`;
+                   }
+                 }
+
+                 const journalTitle = entry.acf?.journal_title || entry.meta?.journal_title || entry.title.rendered;
+
+                 return (
+                   <Link
+                     key={entry.id}
+                     href={`/journal/${entry.slug}`}
+                     className="group block bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-xl hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-1"
+                   >
+                     <div className="p-6">
+                       <h3 className="text-lg font-semibold text-gray-800 mb-3 group-hover:text-amber-600 transition-colors">
+                         {journalTitle}
+                       </h3>
+                       <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                         {entry.title.rendered}
+                       </p>
+                       <div className="flex items-center text-xs text-gray-500">
+                         <svg className="w-4 h-4 mr-1 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                         </svg>
+                         <span>{formattedDate || "Recent"}</span>
+                       </div>
+                     </div>
+                   </Link>
+                 );
+               })}
+             </div>
+           )}
+
+           <div className="text-center">
+             <a
+               href="/journal"
+               className="inline-flex items-center px-12 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg rounded"
+             >
+               View All Journal Entries
+             </a>
+           </div>
+</div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-gray-900 text-white py-12">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <img
+                src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp"
+                alt="MHMA"
+                className="h-16 mx-auto mb-6"
+                width="300"
+                height="61"
+              />
+            </div>
+            <p className="text-center text-gray-400 text-sm mb-6">
+              © Copyright 2010-2026 | Mountain House Muslim Association
             </p>
-          </header>
-          <a
-            href="/events"
-            className="inline-flex items-center px-12 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg rounded"
-          >
-            View All Events
-          </a>
-        </div>
-      </section>
-
-      {/* Vision Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-12 items-center">
-            <div className="md:col-span-2">
-              <div className="border-l-4 border-amber-400 pl-8">
-                <h2 className="text-4xl font-bold mb-6 uppercase">Our Vision</h2>
-                <div className="w-24 h-1 bg-amber-400 mb-6"></div>
-                <h3 className="text-2xl text-gray-700 leading-relaxed">
-                  Build a cohesive Muslim community, providing the platform to do good for ourselves and others.
-                </h3>
-              </div>
-              <div className="mt-8 pl-8">
-                <a
-                  href="/mission"
-                  className="inline-flex items-center px-6 py-3 border-2 border-gray-800 text-gray-800 font-semibold text-sm uppercase tracking-wider hover:bg-gray-800 hover:text-white transition-all duration-300"
-                >
-                  Our Mission
-                </a>
-              </div>
-            </div>
-            <div className="text-center md:text-right">
-              <a
-                href="https://donate.stripe.com/aEU3g43Or9LdaLm6oo"
-                className="inline-flex items-center px-10 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                DONATE
+            <div className="flex justify-center gap-4">
+              <a href="https://www.facebook.com/mhma95391" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/mhma.ig/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              </a>
+              <a href="https://twitter.com/mhmuslims" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="https://www.youtube.com/@mhmuslimassociation" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </a>
+              <a href="https://www.linkedin.com/company/mountain-house-muslim-association" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
               </a>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Mission Section with Parallax */}
-      <section 
-        className="relative py-24 bg-fixed bg-cover bg-center"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(https://mhma.us/wp-content/uploads/2024/01/Vision.webp)',
-        }}
-      >
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-center text-white mb-4 uppercase">Our Mission</h2>
-          <div className="w-24 h-1 bg-amber-400 mx-auto mb-6"></div>
-          <p className="text-white/90 text-center max-w-4xl mx-auto text-lg leading-relaxed mb-16">
-            Promote intra and interfaith harmony through regular activities that bring folks together. 
-            Provide a healthy environment for our youth through sports, education and other entertaining 
-            activities, building strong bonds and giving them a strong sense of belonging.
-          </p>
-
-          {/* 4 Program Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Build A Masjid */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 text-center group hover:bg-white/20 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto mb-4 text-amber-400">
-                <Landmark className="w-full h-full" />
-              </div>
-              <h3 className="text-white text-xl font-bold mb-3">Build A Masjid</h3>
-              <p className="text-white/80 text-sm mb-4">
-                Alhamdulillah, help us build the Islamic Center of Mountain House
-              </p>
-              <a
-                href="/masjid"
-                className="inline-flex items-center text-amber-400 text-sm font-medium hover:text-white transition-colors"
-              >
-                Learn More →
-              </a>
-            </div>
-
-            {/* Unity Center */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 text-center group hover:bg-white/20 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto mb-4 text-amber-400">
-                <Home className="w-full h-full" />
-              </div>
-              <h3 className="text-white text-xl font-bold mb-3">Unity Center</h3>
-              <p className="text-white/80 text-sm mb-4">
-                The MHMA utilized the Unity Center for Jumma prayer and other activities.
-              </p>
-              <a
-                href="/unity-center"
-                className="inline-flex items-center text-amber-400 text-sm font-medium hover:text-white transition-colors"
-              >
-                Learn More →
-              </a>
-            </div>
-
-            {/* Education */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 text-center group hover:bg-white/20 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto mb-4 text-amber-400">
-                <GraduationCap className="w-full h-full" />
-              </div>
-              <h3 className="text-white text-xl font-bold mb-3">Education</h3>
-              <p className="text-white/80 text-sm mb-4">
-                The WISH Program offers a variety of Weekend programs for kids and adults
-              </p>
-              <a
-                href="/education"
-                className="inline-flex items-center text-amber-400 text-sm font-medium hover:text-white transition-colors"
-              >
-                Learn More →
-              </a>
-            </div>
-
-            {/* Family */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-6 text-center group hover:bg-white/20 transition-all duration-300">
-              <div className="w-16 h-16 mx-auto mb-4 text-amber-400">
-                <Users className="w-full h-full" />
-              </div>
-              <h3 className="text-white text-xl font-bold mb-3">Family</h3>
-              <p className="text-white/80 text-sm mb-4">
-                MHMA organized regular activities for Muslim families in Mountain House
-              </p>
-              <a
-                href="/family"
-                className="inline-flex items-center text-amber-400 text-sm font-medium hover:text-white transition-colors"
-              >
-                Learn More →
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Blog CTA */}
-      <section className="py-20 bg-gray-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <a
-            href="/journal"
-            className="inline-flex items-center px-12 py-5 bg-amber-400 text-white font-bold text-lg uppercase tracking-wider hover:bg-amber-500 transition-all duration-300 shadow-lg rounded"
-          >
-            Read Our Blog
-          </a>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <img 
-              src="https://mhma.us/wp-content/uploads/2023/12/MHMA-Site-Logo-345x70-1.webp" 
-              alt="MHMA" 
-              className="h-16 mx-auto mb-6"
-              width="300"
-              height="61"
-            />
-          </div>
-          <p className="text-center text-gray-400 text-sm mb-6">
-            © Copyright 2010-2026 | Mountain House Muslim Association
-          </p>
-          <div className="flex justify-center gap-4">
-            <a href="https://www.facebook.com/mhma95391" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            </a>
-            <a href="https://www.instagram.com/mhma.ig/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-            </a>
-            <a href="https://twitter.com/mhmuslims" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="https://www.youtube.com/@mhmuslimassociation" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-            </a>
-            <a href="https://www.linkedin.com/company/mountain-house-muslim-association" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-amber-400 hover:bg-amber-400 hover:text-white transition-all">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-            </a>
-          </div>
-        </div>
-      </footer>
+        </footer>
     </div>
   );
 }

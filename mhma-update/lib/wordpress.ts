@@ -176,7 +176,7 @@ export async function fetchEvents(parentId: number = 152): Promise<WordPressEven
     // Fetch media URLs for events that have numeric poster IDs
     const eventsWithMedia = await Promise.all(
       events.map(async (event) => {
-        if (event.acf.event_poster && typeof event.acf.event_poster === 'number') {
+        if (event.acf?.event_poster && typeof event.acf.event_poster === 'number') {
           try {
             const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${event.acf.event_poster}?_=${timestamp}`);
             if (mediaResponse.ok) {
@@ -200,6 +200,110 @@ export async function fetchEvents(parentId: number = 152): Promise<WordPressEven
     return eventsWithMedia || [];
   } catch (error) {
     console.warn("Failed to fetch events:", error);
+    return [];
+  }
+}
+
+// Types for Programs
+export interface WordPressProgram {
+  id: number;
+  title: { rendered: string };
+  slug: string;
+  acf?: {
+    program_title?: string;
+    program_description?: string;
+    program_image?: string | number;
+  };
+}
+
+/**
+ * Fetch WordPress Programs from REST API
+ * Returns up to limit programs, sorted by date (newest first)
+ */
+export async function fetchPrograms(limit: number = 6): Promise<WordPressProgram[]> {
+  try {
+    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+    const timestamp = Date.now();
+    const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=70&per_page=${limit}&_=${timestamp}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch programs: ${response.status}`);
+      return [];
+    }
+
+    const programs: WordPressProgram[] = await response.json();
+    
+    // Fetch media URLs for programs that have numeric image IDs
+    const programsWithMedia = await Promise.all(
+      programs.map(async (program) => {
+        if (program.acf?.program_image && typeof program.acf.program_image === 'number') {
+          try {
+            const mediaResponse = await fetch(`${WP_API_URL}/wp/v2/media/${program.acf.program_image}?_=${timestamp}`);
+            if (mediaResponse.ok) {
+              const media = await mediaResponse.json();
+              return {
+                ...program,
+                acf: {
+                  ...program.acf,
+                  program_image: media.source_url || media.guid?.rendered || "",
+                },
+              };
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch media for program ${program.id}:`, error);
+          }
+        }
+        return program;
+      })
+    );
+    
+    return programsWithMedia || [];
+  } catch (error) {
+    console.warn("Failed to fetch programs:", error);
+    return [];
+  }
+}
+
+// Types for Journal entries
+export interface WordPressJournalEntry {
+  id: number;
+  title: { rendered: string };
+  slug: string;
+  acf?: {
+    journal_title?: string;
+    date_published?: string;
+    content?: string;
+  };
+  meta?: {
+    journal_title?: string;
+    date_published?: string;
+    journal_content?: string;
+  };
+  content?: { rendered: string };
+}
+
+/**
+ * Fetch WordPress Journal entries from REST API
+ * Returns up to limit entries, sorted by date (newest first)
+ */
+export async function fetchJournalEntries(limit: number = 3): Promise<WordPressJournalEntry[]> {
+  try {
+    const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "http://mhma-update.local/wp-json";
+    const timestamp = Date.now();
+    const response = await fetch(`${WP_API_URL}/wp/v2/pages?parent=199&per_page=${limit}&_=${timestamp}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch journal entries: ${response.status}`);
+      return [];
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn("Failed to fetch journal entries:", error);
     return [];
   }
 }
