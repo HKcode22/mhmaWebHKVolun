@@ -4,10 +4,14 @@ const WP_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || 'http://mhma-upd
 
 export async function GET(request: NextRequest) {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const programsResponse = await fetch(
       `${WP_API_URL}/wp/v2/pages?parent=70&per_page=100`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 }, signal: controller.signal }
     );
+    clearTimeout(timeout);
     
     if (!programsResponse.ok) {
       return NextResponse.json({ error: 'Failed to fetch programs' }, { status: 500 });

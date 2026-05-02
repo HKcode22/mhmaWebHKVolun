@@ -430,9 +430,7 @@ export default function HomePage() {
   const [wpPrograms, setWpPrograms] = useState<any[]>([]);
   const [wpJournalEntries, setWpJournalEntries] = useState<any[]>([]);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
-  const [prayerTimesLoading, setPrayerTimesLoading] = useState(true);
-
-  const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+const [prayerTimesLoading, setPrayerTimesLoading] = useState(true);
 
   // Fetch prayer times from AlAdhan API
   useEffect(() => {
@@ -464,11 +462,11 @@ export default function HomePage() {
     
     const setFallbackTimes = () => {
       setPrayerTimes([
-        { name: "Fajr", time: "4:48 AM" },
-        { name: "Dhuhr", time: "1:00 PM" },
-        { name: "Asr", time: "5:56 PM" },
-        { name: "Maghrib", time: "7:58 PM" },
-        { name: "Isha", time: "9:19 PM" },
+        { name: "Fajr", arabicName: "الفجر", time: "4:48 AM" },
+        { name: "Dhuhr", arabicName: "الظهر", time: "1:00 PM" },
+        { name: "Asr", arabicName: "العصر", time: "5:56 PM" },
+        { name: "Maghrib", arabicName: "المغرب", time: "7:58 PM" },
+        { name: "Isha", arabicName: "العشاء", time: "9:19 PM" },
       ]);
     };
     
@@ -478,33 +476,32 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        let verse: QuranVerse | null = null;
-        
-        // Try to get cached verse
-        try {
-          const cachedVerse = sessionStorage.getItem('daily_quran_verse');
-          const cachedTime = sessionStorage.getItem('daily_quran_verse_time');
-          
-          if (cachedVerse && cachedTime) {
-            const now = Date.now();
-            const cachedTimeNum = parseInt(cachedTime, 10);
-            if (!isNaN(cachedTimeNum) && (now - cachedTimeNum) < CACHE_DURATION) {
-              verse = JSON.parse(cachedVerse);
-            }
-          }
-        } catch (e) {
-          // No cache available
-        }
-        
-        if (!verse) {
-          verse = await fetchQuranVerse();
-          try {
-            sessionStorage.setItem('daily_quran_verse', JSON.stringify(verse));
-            sessionStorage.setItem('daily_quran_verse_time', Date.now().toString());
-          } catch (e) {
-            // Storage error ignored
-          }
-        }
+        // Always fetch new verse on each load - no caching
+        const verse = await fetchQuranVerse();
+
+        const [events, programs, journalEntries] = await Promise.all([
+          fetchEvents(277),
+          fetchPrograms(70),
+          fetchJournalEntries(199),
+        ]);
+        setWpEvents(events);
+        setWpPrograms(programs);
+        setWpJournalEntries(journalEntries);
+        setDailyVerse(verse);
+      } catch (error) {
+        console.error("Data fetching error:", error);
+      } finally {
+        setVerseLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Always fetch new verse on each load
+        const verse = await fetchQuranVerse();
 
         const [events, programs, journalEntries] = await Promise.all([
           fetchEvents(277),

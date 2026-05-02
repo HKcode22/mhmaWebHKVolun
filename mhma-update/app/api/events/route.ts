@@ -7,10 +7,14 @@ export async function GET(request: NextRequest) {
   const parentId = searchParams.get('parent') || '277';
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(
       `${WP_API_URL}/wp/v2/pages?parent=${parentId}&per_page=100`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60 }, signal: controller.signal }
     );
+    clearTimeout(timeout);
     
     if (!response.ok) {
       return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
