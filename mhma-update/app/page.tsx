@@ -439,65 +439,71 @@ export default function HomePage() {
     const fetchPrayerTimes = async () => {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         
         const response = await fetch('/api/prayer-times', { signal: controller.signal });
-        clearTimeout(timeout);
+        clearTimeout(timeoutId);
         
         if (response.ok) {
           const data = await response.json();
-          setPrayerTimes(data.prayerTimes || []);
+          if (data.prayerTimes && data.prayerTimes.length > 0) {
+            setPrayerTimes(data.prayerTimes);
+          } else {
+            setFallbackTimes();
+          }
         } else {
-          // Fallback to default times if API fails
-          setPrayerTimes([
-            { name: "Fajr", time: "4:48 AM" },
-            { name: "Dhuhr", time: "1:00 PM" },
-            { name: "Asr", time: "5:56 PM" },
-            { name: "Maghrib", time: "7:58 PM" },
-            { name: "Isha", time: "9:19 PM" },
-          ]);
+          setFallbackTimes();
         }
       } catch (error) {
-        // Fallback times
-        setPrayerTimes([
-          { name: "Fajr", time: "4:48 AM" },
-          { name: "Dhuhr", time: "1:00 PM" },
-          { name: "Asr", time: "5:56 PM" },
-          { name: "Maghrib", time: "7:58 PM" },
-          { name: "Isha", time: "9:19 PM" },
-        ]);
+        console.warn("Prayer times fetch failed, using fallback");
+        setFallbackTimes();
       } finally {
         setPrayerTimesLoading(false);
       }
     };
+    
+    const setFallbackTimes = () => {
+      setPrayerTimes([
+        { name: "Fajr", time: "4:48 AM" },
+        { name: "Dhuhr", time: "1:00 PM" },
+        { name: "Asr", time: "5:56 PM" },
+        { name: "Maghrib", time: "7:58 PM" },
+        { name: "Isha", time: "9:19 PM" },
+      ]);
+    };
+    
     fetchPrayerTimes();
   }, []);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Check sessionStorage for Quran verse (6-hour cache)
         let verse: QuranVerse | null = null;
-        const cachedVerse = sessionStorage.getItem('daily_quran_verse');
-        const cachedTime = sessionStorage.getItem('daily_quran_verse_time');
         
-        const now = Date.now();
-        
-        if (cachedVerse && cachedTime) {
-          try {
+        // Try to get cached verse
+        try {
+          const cachedVerse = sessionStorage.getItem('daily_quran_verse');
+          const cachedTime = sessionStorage.getItem('daily_quran_verse_time');
+          
+          if (cachedVerse && cachedTime) {
+            const now = Date.now();
             const cachedTimeNum = parseInt(cachedTime, 10);
             if (!isNaN(cachedTimeNum) && (now - cachedTimeNum) < CACHE_DURATION) {
               verse = JSON.parse(cachedVerse);
             }
-          } catch (e) {
-            console.warn("Cache parse error", e);
           }
+        } catch (e) {
+          // No cache available
         }
         
         if (!verse) {
           verse = await fetchQuranVerse();
-          sessionStorage.setItem('daily_quran_verse', JSON.stringify(verse));
-          sessionStorage.setItem('daily_quran_verse_time', now.toString());
+          try {
+            sessionStorage.setItem('daily_quran_verse', JSON.stringify(verse));
+            sessionStorage.setItem('daily_quran_verse_time', Date.now().toString());
+          } catch (e) {
+            // Storage error ignored
+          }
         }
 
         const [events, programs, journalEntries] = await Promise.all([
